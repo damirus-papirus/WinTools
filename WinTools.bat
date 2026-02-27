@@ -328,17 +328,17 @@ echo Установлена последняя версия: %LOCAL_VERSION%
 pause
 ) else (
 
-echo Доступна новая версия: %GITHUB_VERSION%, либо у вас неправильный код утилиты
+echo Доступна новая версия: %GITHUB_VERSION%
 
 set "CHOICE="
-set /p "CHOICE=Вы хотите автоматически загрузить новую версию (либо перепрошить код)? (Y/N) "
+set /p "CHOICE=Вы хотите автоматически загрузить новую версию? (Y/N) "
 if "%CHOICE%"=="" set "CHOICE=Y"
 if /i "%CHOICE%"=="y" set "CHOICE=Y"
 
 if /i "%CHOICE%"=="Y" (
-powershell -command "Invoke-WebRequest -Uri '%GITHUB_DOWNLOAD_URL%' -OutFile '%USERPROFILE%\Documents\WinTools.bat'"
+powershell -command "Invoke-WebRequest -Uri '%GITHUB_DOWNLOAD_URL%' -OutFile '%TEMP%\WinTools.bat'"
 )
-set "SOURCE_DIR=%USERPROFILE%\Documents"
+set "SOURCE_DIR=%TEMP%"
 set "TARGET_DIR=C:\Program Files\WinTools"
 timeout /t 2 /nobreak >nul
 
@@ -395,6 +395,7 @@ echo [INFO] Выход. Журнал сохранён в: %LOG_FILE%
 echo ======================================
 pause
 exit /b 0
+
 
 
 
