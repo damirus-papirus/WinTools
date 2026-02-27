@@ -1,14 +1,14 @@
 @echo off
 chcp 65001 >nul
 setlocal enabledelayedexpansion
-title WinTools 3.3.5 Restored
+title WinTools 3.3.6
 
 :: --- НАСТРОЙКИ ---
 set "LOG_DIR=C:\Program Files\WinTools\Log"
 set "MAIN=C:\Program Files\WinTools"
 set "LOG_FILE=%LOG_DIR%\WinTools.log"
 set "BACKUP_DIR=%USERPROFILE%\Desktop\WinTools_Backup"
-set "LOCAL_VERSION=3.3.5 Restored"
+set "LOCAL_VERSION=3.3.6"
 set "GITHUB_VERSION_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/Data/version.txt"
 set "GITHUB_RELEASE_URL=https://github.com/damirus-papirus/WinTools/tree/main"
 set "GITHUB_DOWNLOAD_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/WinTools.bat"
@@ -29,7 +29,7 @@ set "TIMESTAMP=!TIMESTAMP: =-%"
 >> "%LOG_FILE%" echo User: %USERNAME%
 >> "%LOG_FILE%" echo Host: %COMPUTERNAME%
 >> "%LOG_FILE%" echo ---------------------------
-echo WinTools v3.3.5
+echo WinTools v3.3.6
 echo ======================================
 
 :: --- ПРОВЕРКА ПРАВ АДМИНИСТРАТОРА ---
@@ -316,7 +316,7 @@ for /f "delims=" %%A in ('powershell -command "(Invoke-WebRequest -Uri \"%GITHUB
 
 :: Error handling
 if not defined GITHUB_VERSION (
-    echo Warning: failed to fetch the latest version. This warning does not affect the operation of zapret
+    echo Предупреждение: не удалось загрузить последнюю версию. Это предупреждение не влияет на работу утилиты
     timeout /T 9
     if "%1"=="soft" exit 
     goto menu
@@ -324,25 +324,56 @@ if not defined GITHUB_VERSION (
 
 :: Version comparison
 if "%LOCAL_VERSION%"=="%GITHUB_VERSION%" (
-    echo Latest version installed: %LOCAL_VERSION%
-    
+echo Установлена последняя версия: %LOCAL_VERSION%
+set "CHOICE="
+set /p "CHOICE=Вы хотите перепрошить версию? (Y/N) "
+if "%CHOICE%"=="" set "CHOICE=Y"
+if /i "%CHOICE%"=="y" set "CHOICE=Y"
+
+if /i "%CHOICE%"=="Y" (
+powershell -command "Invoke-WebRequest -Uri '%GITHUB_DOWNLOAD_URL%' -OutFile '%USERPROFILE%\Documents\WinTools.bat'"
+timeout /t 2 /nobreak
+)
+set "SOURCE_DIR=%USERPROFILE%\Documents"
+set "TARGET_DIR=C:\Program Files\WinTools"
+
+
+>> "%LOG_FILE%" echo UPDATE_START %TIME::=.%
+
+echo [INFO] Проверка наличия обновлений...
+if not exist "%SOURCE_DIR%\WinTools.bat" (
+    echo [ERROR] Файл обновления не найден: %SOURCE_DIR%\WinTools.bat
+    goto menu
+)
+
+echo [INFO] Копирование обновлённой версии...
+robocopy "%SOURCE_DIR%" "%TARGET_DIR%" "WinTools.bat" /R:3 /W:1 /NFL /NDL /NP >> "%LOG_FILE%" 2>&1
+
+if %errorlevel% leq 3 (
+    echo [OK] Обновление успешно установлено.
+    >> "%LOG_FILE%" echo UPDATE_SUCCESS %TIME::=.%
+    del %SOURCE_DIR%\WinTools.bat 
+) else (
+    echo [ERROR] Ошибка при обновлении. Код robocopy: %errorlevel%
+    >> "%LOG_FILE%" echo UPDATE_FAILED %TIME::=.% ERROR=%errorlevel%
+)
     if "%1"=="soft" exit 
     pause
     goto menu
 ) 
 
-echo New version available: %GITHUB_VERSION%
+echo Доступна новая версия: %GITHUB_VERSION%
 
 set "CHOICE="
-set /p "CHOICE=Do you want to automatically download the new version? (Y/N) "
+set /p "CHOICE=Вы хотите автоматически загрузить новую версию? (Y/N) "
 if "%CHOICE%"=="" set "CHOICE=Y"
 if /i "%CHOICE%"=="y" set "CHOICE=Y"
 
 if /i "%CHOICE%"=="Y" (
-powershell -command "Invoke-WebRequest -Uri '%GITHUB_DOWNLOAD_URL%' -OutFile '%USERPROFILE%\Desktop\WinTools.bat'"
-echo Новая версия была установлена на рабочий стол. Замените старую версию на только что скачанную.
+powershell -command "Invoke-WebRequest -Uri '%GITHUB_DOWNLOAD_URL%' -OutFile '%USERPROFILE%\Documents\WinTools.bat'"
+timeout /t 2 /nobreak
 )
-set "SOURCE_DIR=C:\Desktop"
+set "SOURCE_DIR=%USERPROFILE%\Documents"
 set "TARGET_DIR=C:\Program Files\WinTools"
 
 
@@ -399,6 +430,3 @@ echo [INFO] Выход. Журнал сохранён в: %LOG_FILE%
 echo ======================================
 pause
 exit /b 0
-
-
-
