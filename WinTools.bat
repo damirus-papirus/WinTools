@@ -325,41 +325,7 @@ if not defined GITHUB_VERSION (
 :: Version comparison
 if "%LOCAL_VERSION%"=="%GITHUB_VERSION%" (
 echo Установлена последняя версия: %LOCAL_VERSION%
-set "CHOICE="
-set /p "CHOICE=Вы хотите перепрошить версию? (Y/N) "
-if "%CHOICE%"=="" set "CHOICE=Y"
-if /i "%CHOICE%"=="y" set "CHOICE=Y"
-
-if /i "%CHOICE%"=="Y" (
-powershell -command "Invoke-WebRequest -Uri '%GITHUB_DOWNLOAD_URL%' -OutFile '%USERPROFILE%\Documents\WinTools.bat'"
-timeout /t 2 /nobreak
-)
-set "SOURCE_DIR=%USERPROFILE%\Documents"
-set "TARGET_DIR=C:\Program Files\WinTools"
-
-
->> "%LOG_FILE%" echo UPDATE_START %TIME::=.%
-
-echo [INFO] Проверка наличия обновлений...
-if not exist "%SOURCE_DIR%\WinTools.bat" (
-    echo [ERROR] Файл обновления не найден: %SOURCE_DIR%\WinTools.bat
-    goto menu
-)
-
-echo [INFO] Копирование обновлённой версии...
-robocopy "%SOURCE_DIR%" "%TARGET_DIR%" "WinTools.bat" /R:3 /W:1 /NFL /NDL /NP >> "%LOG_FILE%" 2>&1
-
-if %errorlevel% leq 3 (
-    echo [OK] Обновление успешно установлено.
-    >> "%LOG_FILE%" echo UPDATE_SUCCESS %TIME::=.%
-    del %SOURCE_DIR%\WinTools.bat 
-) else (
-    echo [ERROR] Ошибка при обновлении. Код robocopy: %errorlevel%
-    >> "%LOG_FILE%" echo UPDATE_FAILED %TIME::=.% ERROR=%errorlevel%
-)
-    if "%1"=="soft" exit 
-    pause
-    goto menu
+pause
 ) 
 
 echo Доступна новая версия: %GITHUB_VERSION%
@@ -430,3 +396,4 @@ echo [INFO] Выход. Журнал сохранён в: %LOG_FILE%
 echo ======================================
 pause
 exit /b 0
+
