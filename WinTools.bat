@@ -8,13 +8,19 @@ set "LOG_DIR=C:\Program Files\WinTools\Log"
 set "MAIN=C:\Program Files\WinTools"
 set "LOG_FILE=%LOG_DIR%\WinTools.log"
 set "BACKUP_DIR=%USERPROFILE%\Desktop\WinTools_Backup"
+set "CONFIG_FILE="C:\Program Files\WinTools\config\config.bat""
+set "CONFIG_DIR="C:\Program Files\WinTools\config""
 set "LOCAL_VERSION=3.3.6"
 set "GITHUB_VERSION_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/Data/version.txt"
 set "GITHUB_RELEASE_URL=https://github.com/damirus-papirus/WinTools/tree/main"
 set "GITHUB_DOWNLOAD_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/WinTools.bat"
+set "CONFIG_URL=
 if not exist "%LOG_DIR%" (
     mkdir "%LOG_DIR%"
 )
+if not exist %CONFIG_FILE% (
+mkdir %CONFIG_DIR%
+powershell -command "Invoke-WebRequest -Uri '%GITHUB_DOWNLOAD_URL%' -OutFile '%SOURCE_DIR%\WinTools.bat'"
 
 :: Форматируем временную метку без спецсимволов
 set "TIMESTAMP=%DATE% %TIME%"
@@ -397,3 +403,4 @@ echo [INFO] Выход. Журнал сохранён в: %LOG_FILE%
 echo ======================================
 pause
 exit /b 0
+
