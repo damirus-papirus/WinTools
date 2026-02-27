@@ -328,10 +328,10 @@ echo Установлена последняя версия: %LOCAL_VERSION%
 pause
 ) 
 
-echo Доступна новая версия: %GITHUB_VERSION%
+echo Доступна новая версия: %GITHUB_VERSION%, либо у вас неправильный код утилиты
 
 set "CHOICE="
-set /p "CHOICE=Вы хотите автоматически загрузить новую версию? (Y/N) "
+set /p "CHOICE=Вы хотите автоматически загрузить новую версию (либо перепрошить код)? (Y/N) "
 if "%CHOICE%"=="" set "CHOICE=Y"
 if /i "%CHOICE%"=="y" set "CHOICE=Y"
 
@@ -396,4 +396,5 @@ echo [INFO] Выход. Журнал сохранён в: %LOG_FILE%
 echo ======================================
 pause
 exit /b 0
+
 
