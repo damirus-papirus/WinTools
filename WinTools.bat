@@ -1,14 +1,14 @@
 @echo off
 chcp 65001 >nul
 setlocal enabledelayedexpansion
-title WinTools 3.3.61
+title WinTools 3.3.6
 
 :: --- НАСТРОЙКИ ---
 set "LOG_DIR=C:\Program Files\WinTools\Log"
 set "MAIN=C:\Program Files\WinTools"
 set "LOG_FILE=%LOG_DIR%\WinTools.log"
 set "BACKUP_DIR=%USERPROFILE%\Desktop\WinTools_Backup"
-set "LOCAL_VERSION=3.3.61"
+set "LOCAL_VERSION=3.3.6"
 set "GITHUB_VERSION_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/Data/version.txt"
 set "GITHUB_RELEASE_URL=https://github.com/damirus-papirus/WinTools/tree/main"
 set "GITHUB_DOWNLOAD_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/WinTools.bat"
@@ -29,7 +29,7 @@ set "TIMESTAMP=!TIMESTAMP: =-%"
 >> "%LOG_FILE%" echo User: %USERNAME%
 >> "%LOG_FILE%" echo Host: %COMPUTERNAME%
 >> "%LOG_FILE%" echo ---------------------------
-echo WinTools v3.3.61
+echo WinTools v3.3.6
 echo ======================================
 
 :: --- ПРОВЕРКА ПРАВ АДМИНИСТРАТОРА ---
@@ -310,6 +310,8 @@ goto menu
 set "GITHUB_VERSION_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/Data/version.txt"
 set "GITHUB_RELEASE_URL=https://github.com/damirus-papirus/WinTools/tree/main"
 set "GITHUB_DOWNLOAD_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/WinTools.bat"
+set "SOURCE_DIR=C:\Program Files\WinTools\Log"
+set "TARGET_DIR=C:\Program Files\WinTools"
 
 :: Get the latest version from GitHub
 for /f "delims=" %%A in ('powershell -command "(Invoke-WebRequest -Uri \"%GITHUB_VERSION_URL%\" -Headers @{\"Cache-Control\"=\"no-cache\"} -TimeoutSec 5).Content.Trim()" 2^>nul') do set "GITHUB_VERSION=%%A"
@@ -336,17 +338,17 @@ if "%CHOICE%"=="" set "CHOICE=Y"
 if /i "%CHOICE%"=="y" set "CHOICE=Y"
 
 if /i "%CHOICE%"=="Y" (
-powershell -command "Invoke-WebRequest -Uri '%GITHUB_DOWNLOAD_URL%' -OutFile '%TEMP%\WinTools.bat'"
+start "C:\Program Files\WinTools\config\config.bat"
 )
-set "SOURCE_DIR=%TEMP%"
+timeout /t 5 /nobreak >nul
+set "SOURCE_DIR=C:\Program Files\WinTools\Log"
 set "TARGET_DIR=C:\Program Files\WinTools"
-timeout /t 2 /nobreak >nul
 
 >> "%LOG_FILE%" echo UPDATE_START %TIME::=.%
 
 echo [INFO] Проверка наличия обновлений...
 if not exist "%SOURCE_DIR%\WinTools.bat" (
-    echo [ERROR] Файл обновления не найден: %SOURCE_DIR%\WinTools.bat
+    echo [ERROR] Файл обновления не найден: C:\Program Files\WinTools\Log\WinTools.bat
     goto menu
 )
 
@@ -356,15 +358,15 @@ robocopy "%SOURCE_DIR%" "%TARGET_DIR%" "WinTools.bat" /R:3 /W:1 /NFL /NDL /NP >>
 if %errorlevel% leq 3 (
     echo [OK] Обновление успешно установлено.
     >> "%LOG_FILE%" echo UPDATE_SUCCESS %TIME::=.%
-    del %SOURCE_DIR%\WinTools.bat 
+    if exist "%TEMP%\WinTools.bat" del "%TEMP%\WinTools.bat"
 ) else (
     echo [ERROR] Ошибка при обновлении. Код robocopy: %errorlevel%
     >> "%LOG_FILE%" echo UPDATE_FAILED %TIME::=.% ERROR=%errorlevel%
 )
 
 pause
-goto menu
 )
+goto menu
 :: --- 11. ПИНГ ---
 :ping
 set /p HOST="Введите адрес сайта или IP (например, www.google.com или 216.239.38.120): "
@@ -395,9 +397,3 @@ echo [INFO] Выход. Журнал сохранён в: %LOG_FILE%
 echo ======================================
 pause
 exit /b 0
-
-
-
-
-
-
