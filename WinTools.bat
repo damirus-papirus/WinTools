@@ -337,11 +337,10 @@ if /i "%CHOICE%"=="y" set "CHOICE=Y"
 
 if /i "%CHOICE%"=="Y" (
 powershell -command "Invoke-WebRequest -Uri '%GITHUB_DOWNLOAD_URL%' -OutFile '%USERPROFILE%\Documents\WinTools.bat'"
-timeout /t 2 /nobreak
 )
 set "SOURCE_DIR=%USERPROFILE%\Documents"
 set "TARGET_DIR=C:\Program Files\WinTools"
-
+timeout /t 2 /nobreak >nul
 
 >> "%LOG_FILE%" echo UPDATE_START %TIME::=.%
 
@@ -396,6 +395,7 @@ echo [INFO] Выход. Журнал сохранён в: %LOG_FILE%
 echo ======================================
 pause
 exit /b 0
+
 
 
 
