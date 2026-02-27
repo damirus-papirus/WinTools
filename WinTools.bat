@@ -12,12 +12,6 @@ set "LOCAL_VERSION=3.3.5"
 set "GITHUB_VERSION_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/Data/version.txt"
 set "GITHUB_RELEASE_URL=https://github.com/damirus-papirus/WinTools/tree/main"
 set "GITHUB_DOWNLOAD_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/WinTools.bat"
-if not exist "%MAIN%" (
-    for /f "delims=" %%A in ('powershell -command "(Invoke-WebRequest -Uri \"%GITHUB_VERSION_URL%\" -Headers @{\"Cache-Control\"=\"no-cache\"} -TimeoutSec 5).Content.Trim()" 2^>nul') do set         "GITHUB_VERSION=%%A"
-    echo Установка последней версии утилиты(%GITHUB_VERSION%)...
-    mkdir "%MAIN%"
-    powershell -command "Invoke-WebRequest -Uri '%GITHUB_DOWNLOAD_URL%' -OutFile '%USERPROFILE%\Desktop\WinTools.bat'"
-)
 if not exist "%LOG_DIR%" (
     mkdir "%LOG_DIR%"
 )
@@ -405,4 +399,5 @@ echo [INFO] Выход. Журнал сохранён в: %LOG_FILE%
 echo ======================================
 pause
 exit /b 0
+
 
