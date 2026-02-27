@@ -326,7 +326,7 @@ if not defined GITHUB_VERSION (
 if "%LOCAL_VERSION%"=="%GITHUB_VERSION%" (
 echo Установлена последняя версия: %LOCAL_VERSION%
 pause
-) 
+) else (
 
 echo Доступна новая версия: %GITHUB_VERSION%, либо у вас неправильный код утилиты
 
@@ -365,7 +365,7 @@ if %errorlevel% leq 3 (
 
 pause
 goto menu
-
+)
 :: --- 11. ПИНГ ---
 :ping
 set /p HOST="Введите адрес сайта или IP (например, www.google.com или 216.239.38.120): "
@@ -396,5 +396,6 @@ echo [INFO] Выход. Журнал сохранён в: %LOG_FILE%
 echo ======================================
 pause
 exit /b 0
+
 
 
