@@ -14,14 +14,13 @@ set "LOCAL_VERSION=3.3.6"
 set "GITHUB_VERSION_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/Data/version.txt"
 set "GITHUB_RELEASE_URL=https://github.com/damirus-papirus/WinTools/tree/main"
 set "GITHUB_DOWNLOAD_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/WinTools.bat"
-set "CONFIG_URL=
 if not exist "%LOG_DIR%" (
     mkdir "%LOG_DIR%"
 )
 if not exist %CONFIG_FILE% (
 mkdir %CONFIG_DIR%
-powershell -command "Invoke-WebRequest -Uri '%GITHUB_DOWNLOAD_URL%' -OutFile '%SOURCE_DIR%\WinTools.bat'"
-
+powershell -command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/Data/config.bat' -OutFile '%SOURCE_DIR%\conig\config.bat'"
+)
 :: Форматируем временную метку без спецсимволов
 set "TIMESTAMP=%DATE% %TIME%"
 set "TIMESTAMP=!TIMESTAMP:/=-%"
@@ -403,4 +402,5 @@ echo [INFO] Выход. Журнал сохранён в: %LOG_FILE%
 echo ======================================
 pause
 exit /b 0
+
 
