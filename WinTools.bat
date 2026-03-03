@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 setlocal enabledelayedexpansion
-title WinTools 3.3.7.1
+title WinTools 3.3.70
 
 :: --- НАСТРОЙКИ ---
 set "LOG_DIR=C:\Program Files\WinTools\Log"
@@ -10,7 +10,7 @@ set "LOG_FILE=%LOG_DIR%\WinTools.log"
 set "BACKUP_DIR=%USERPROFILE%\Desktop\WinTools_Backup"
 set "CONFIG_FILE="C:\Program Files\WinTools\config\config.bat""
 set "CONFIG_DIR="C:\Program Files\WinTools\config""
-set "LOCAL_VERSION=3.3.7.1"
+set "LOCAL_VERSION=3.3.70"
 set "GITHUB_VERSION_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/Data/version.txt"
 set "GITHUB_RELEASE_URL=https://github.com/damirus-papirus/WinTools/tree/main"
 set "GITHUB_DOWNLOAD_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/WinTools.bat"
@@ -43,7 +43,7 @@ set "TIMESTAMP=!TIMESTAMP: =-%"
 >> "%LOG_FILE%" echo User: %USERNAME%
 >> "%LOG_FILE%" echo Host: %COMPUTERNAME%
 >> "%LOG_FILE%" echo ---------------------------
-echo WinTools v3.3.7.1
+echo WinTools v3.3.70
 echo ======================================
 
 :: --- ПРОВЕРКА ПРАВ АДМИНИСТРАТОРА ---
@@ -55,9 +55,17 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 echo [OK] Права администратора подтверждены.
+:: Загрузка сохранённого цвета при запуске
+if exist "%~dp0color_settings.txt" (
+    set /p SAVED_COLOR=<"%~dp0color_settings.txt"
+    color !SAVED_COLOR!
+) else (
+    color 07
+)
 timeout /t 1 /nobreak >nul
 :: --- ГЛАВНОЕ МЕНЮ ---
 :menu
+echo.
 echo === MAIN MENU ===
 echo 1. Проверить целостность системы (SFC/DISM)
 echo 2. Очистить кэш
@@ -69,10 +77,11 @@ echo 7. Путь к логу
 echo 8. Удалить лог
 echo 9. Деактивация Windows
 echo 10. Проверить и обновить утилиту
-echo 11. Пинг
-echo 12. Выход
+echo 11. Сменить стиль
+echo 12. Пинг
+echo 13. Выход
 echo.
-set /p choice="Выберите опцию (1-12): "
+set /p choice="Выберите опцию (1-13): "
 
 if "%choice%"=="1" goto check_health
 if "%choice%"=="2" goto clean_temp
@@ -84,8 +93,9 @@ if "%choice%"=="7" goto what_log
 if "%choice%"=="8" goto clear_log
 if "%choice%"=="9" goto deactivation
 if "%choice%"=="10" goto update
-if "%choice%"=="11" goto ping
-if "%choice%"=="12" goto exit_script
+if "%choice%"=="11" goto style
+if "%choice%"=="12" goto ping
+if "%choice%"=="13" goto exit_script
 echo Неверный выбор! Попробуйте снова.
 goto menu
 
@@ -380,7 +390,75 @@ if %errorlevel% leq 3 (
 pause
 )
 goto menu
-:: --- 11. ПИНГ ---
+
+:: --- 11. СТИЛЬ ---
+:style
+echo Выберите стиль текста:
+echo 0. Чёрный
+echo 1. Синий
+echo 2. Зелёный
+echo 3. Голубой
+echo 4. Красный
+echo 5. Пурпурный
+echo 6. Жёлтый
+echo 7. Белый
+echo 8. Серый
+echo 9. Светло‑синий
+echo A. Светло‑зелёный
+echo B. Светло‑голубой
+echo C. Светло‑красный
+echo D. Светло‑пурпурный
+echo E. Светло‑жёлтый
+echo F. Ярко‑белый
+set /p text_choice="Выберите цвет текста (0-F): "
+
+:: Проверка корректности ввода для цвета текста
+if not defined text_choice goto style
+if "%text_choice%" lss "0" goto style
+if /i "%text_choice%" gtr "F" goto style
+
+echo.
+echo Выберите цвет фона:
+echo 0. Чёрный
+echo 1. Синий
+echo 2. Зелёный
+echo 3. Голубой
+echo 4. Красный
+echo 5. Пурпурный
+echo 6. Жёлтый
+echo 7. Белый
+echo 8. Серый
+echo 9. Светло‑синий
+echo A. Светло‑зелёный
+echo B. Светло‑голубой
+echo C. Светло‑красный
+echo D. Светло‑пурпурный
+echo E. Светло‑жёлтый
+echo F. Ярко‑белый
+set /p bg_choice="Выберите цвет фона (0-F): "
+
+:: Проверка корректности ввода для цвета фона
+if not defined bg_choice goto style
+if "%bg_choice%" lss "0" goto style
+if /i "%bg_choice%" gtr "F" goto style
+
+:: Проверка на совпадение цветов
+if /i "%text_choice%"=="%bg_choice%" (
+    echo ОШИБКА: Цвет текста и фона совпадают! Выберите разные цвета.
+    timeout /t 2 /nobreak >nul
+    goto style
+)
+
+:: Установка комбинации цветов
+color %bg_choice%%text_choice%
+
+:: Сохранение в файл
+echo %bg_choice%%text_choice% > "%~dp0color_settings.txt"
+echo Цвет изменён и сохранён: текст %text_choice%, фон %bg_choice%!
+timeout /t 1 /nobreak >nul
+goto menu
+
+:: --- 12. ПИНГ ---
 :ping
 set /p HOST="Введите адрес сайта или IP (например, www.google.com или 216.239.38.120): "
 
@@ -403,7 +481,7 @@ if /i "%show_details%"=="Y" ping %HOST% -n 10
 pause
 goto menu
 
-:: --- 12. ВЫХОД ---
+:: --- 13. ВЫХОД ---
 :exit_script
 echo [INFO] Выход. Журнал сохранён в: %LOG_FILE%
 >> "%LOG_FILE%" echo EXIT %TIME::=.%
