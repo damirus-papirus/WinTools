@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 setlocal enabledelayedexpansion
-title WinTools 3.3.70
+title WinTools 3.3.7.1
 
 :: --- НАСТРОЙКИ ---
 set "LOG_DIR=C:\Program Files\WinTools\Log"
@@ -10,17 +10,26 @@ set "LOG_FILE=%LOG_DIR%\WinTools.log"
 set "BACKUP_DIR=%USERPROFILE%\Desktop\WinTools_Backup"
 set "CONFIG_FILE="C:\Program Files\WinTools\config\config.bat""
 set "CONFIG_DIR="C:\Program Files\WinTools\config""
-set "LOCAL_VERSION=3.3.63"
+set "LOCAL_VERSION=3.3.7.1"
 set "GITHUB_VERSION_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/Data/version.txt"
 set "GITHUB_RELEASE_URL=https://github.com/damirus-papirus/WinTools/tree/main"
 set "GITHUB_DOWNLOAD_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/WinTools.bat"
+if not exist "%MAIN%" (
+    mkdir "%MAIN%"
+)
 if not exist "%LOG_DIR%" (
-    mkdir "%LOG_DIR%"
+    mkdir "%LOG_DIR%" >nul
 )
 if not exist %CONFIG_FILE% (
-mkdir %CONFIG_DIR%
-powershell -command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/Data/config.bat' -OutFile '%SOURCE_DIR%\conig\config.bat'"
+    mkdir %CONFIG_DIR% >nul
+    powershell -command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/Data/config.bat' -OutFile '"%MAIN%"\config\config.bat'"
 )
+if not exist "%MAIN%"\WinTools.bat (
+    echo Переместите эту утилиту по пути C:\Program Files\WinTools
+    pause
+    exit /b
+)
+
 :: Форматируем временную метку без спецсимволов
 set "TIMESTAMP=%DATE% %TIME%"
 set "TIMESTAMP=!TIMESTAMP:/=-%"
@@ -34,7 +43,7 @@ set "TIMESTAMP=!TIMESTAMP: =-%"
 >> "%LOG_FILE%" echo User: %USERNAME%
 >> "%LOG_FILE%" echo Host: %COMPUTERNAME%
 >> "%LOG_FILE%" echo ---------------------------
-echo WinTools v3.3.63
+echo WinTools v3.3.7.1
 echo ======================================
 
 :: --- ПРОВЕРКА ПРАВ АДМИНИСТРАТОРА ---
@@ -46,11 +55,9 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 echo [OK] Права администратора подтверждены.
-
+timeout /t 1 /nobreak >nul
 :: --- ГЛАВНОЕ МЕНЮ ---
 :menu
-echo.
-echo.
 echo === MAIN MENU ===
 echo 1. Проверить целостность системы (SFC/DISM)
 echo 2. Очистить кэш
@@ -403,4 +410,3 @@ echo [INFO] Выход. Журнал сохранён в: %LOG_FILE%
 echo ======================================
 pause
 exit /b 0
-
