@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 setlocal enabledelayedexpansion
-title WinTools 3.3.8.0
+title WinTools 4.0.0
 
 :: --- НАСТРОЙКИ ---
 set "LOG_DIR=C:\Program Files\WinTools\Log"
@@ -10,10 +10,11 @@ set "LOG_FILE=%LOG_DIR%\WinTools.log"
 set "BACKUP_DIR=%USERPROFILE%\Desktop\WinTools_Backup"
 set "CONFIG_FILE="C:\Program Files\WinTools\config\config.bat""
 set "CONFIG_DIR="C:\Program Files\WinTools\config""
-set "LOCAL_VERSION=3.3.8.0"
+set "LOCAL_VERSION=4.0.0"
 set "GITHUB_VERSION_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/Data/version.txt"
 set "GITHUB_RELEASE_URL=https://github.com/damirus-papirus/WinTools/tree/main"
 set "GITHUB_DOWNLOAD_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/WinTools.bat"
+
 if not exist "%MAIN%" (
     mkdir "%MAIN%"
 )
@@ -43,7 +44,7 @@ set "TIMESTAMP=!TIMESTAMP: =-%"
 >> "%LOG_FILE%" echo User: %USERNAME%
 >> "%LOG_FILE%" echo Host: %COMPUTERNAME%
 >> "%LOG_FILE%" echo ---------------------------
-echo WinTools v3.3.8.0
+echo WinTools v4.0.0
 echo ======================================
 
 :: --- ПРОВЕРКА ПРАВ АДМИНИСТРАТОРА ---
@@ -55,6 +56,7 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 echo [OK] Права администратора подтверждены.
+
 :: Загрузка сохранённого цвета при запуске
 if exist "%~dp0color_settings.txt" (
     set /p SAVED_COLOR=<"%~dp0color_settings.txt"
@@ -63,12 +65,13 @@ if exist "%~dp0color_settings.txt" (
     color 07
 )
 timeout /t 1 /nobreak >nul
+
 :: --- ГЛАВНОЕ МЕНЮ ---
 :menu
 echo.
 echo === MAIN MENU ===
 echo 1. Проверить целостность системы (SFC/DISM)
-echo 2. Очистить кэш
+echo 2. Очистить кэш и временные файлы
 echo 3. Сброс настроек хранилища лицензий (tokens.dat)
 echo 4. Активация Windows
 echo 5. Резервное копирование важных данных
@@ -79,9 +82,18 @@ echo 9. Деактивация Windows
 echo 10. Проверить и обновить утилиту
 echo 11. Сменить стиль
 echo 12. Пинг
-echo 13. Выход
+echo 13. Отчёт о системе
+echo 14. Очистка корзины
+echo 15. Трассировка маршрута
+echo 16. Проверка обновлений Windows
+echo 17. Сканирование Windows Defender
+echo 18. Управление службами
+echo 19. Создание точки восстановления
+echo 20. Мониторинг процессов
+echo 21. Генератор паролей
+echo 22. Выход
 echo.
-set /p choice="Выберите опцию (1-13): "
+set /p choice="Выберите опцию (1-22): "
 
 if "%choice%"=="1" goto check_health
 if "%choice%"=="2" goto clean_temp
@@ -95,7 +107,16 @@ if "%choice%"=="9" goto deactivation
 if "%choice%"=="10" goto update
 if "%choice%"=="11" goto style
 if "%choice%"=="12" goto ping
-if "%choice%"=="13" goto exit_script
+if "%choice%"=="13" goto system_report
+if "%choice%"=="14" goto empty_recyclebin
+if "%choice%"=="15" goto tracert_tool
+if "%choice%"=="16" goto check_updates
+if "%choice%"=="17" goto defender_scan
+if "%choice%"=="18" goto manage_services
+if "%choice%"=="19" goto create_restore_point
+if "%choice%"=="20" goto process_monitor
+if "%choice%"=="21" goto password_generator
+if "%choice%"=="22" goto exit_script
 echo Неверный выбор! Попробуйте снова.
 goto menu
 
@@ -168,8 +189,6 @@ set "TIMEOUT_SECS=10"
 echo Какой выпуск Windows 10 у вас установлен? (home, pro, education)
 set "edition="
 set /p edition=
-
-
 if not defined edition (
     echo [INFO] Входные данные не могут быть пустыми. Попробуйте снова.
     goto ask_edition
@@ -343,7 +362,7 @@ for /f "delims=" %%A in ('powershell -command "(Invoke-WebRequest -Uri \"%GITHUB
 if not defined GITHUB_VERSION (
     echo Предупреждение: не удалось загрузить последнюю версию. Это предупреждение не влияет на работу утилиты
     timeout /T 9
-    if "%1"=="soft" exit 
+    if "%1"=="soft" exit
     goto menu
 )
 
@@ -361,131 +380,305 @@ if "%CHOICE%"=="" set "CHOICE=Y"
 if /i "%CHOICE%"=="y" set "CHOICE=Y"
 
 if /i "%CHOICE%"=="Y" (
-start "C:\Program Files\WinTools\config\config.bat"
-)
-timeout /t 5 /nobreak >nul
-set "SOURCE_DIR=C:\Program Files\WinTools\Log"
-set "TARGET_DIR=C:\Program Files\WinTools"
-
->> "%LOG_FILE%" echo UPDATE_START %TIME::=.%
-
-echo [INFO] Проверка наличия обновлений...
-if not exist "%SOURCE_DIR%\WinTools.bat" (
-    echo [ERROR] Файл обновления не найден: C:\Program Files\WinTools\Log\WinTools.bat
-    goto menu
-)
-
-echo [INFO] Копирование обновлённой версии...
-robocopy "%SOURCE_DIR%" "%TARGET_DIR%" "WinTools.bat" /R:3 /W:1 /NFL /NDL /NP >> "%LOG_FILE%" 2>&1
-
-if %errorlevel% leq 3 (
-    echo [OK] Обновление успешно установлено.
-    >> "%LOG_FILE%" echo UPDATE_SUCCESS %TIME::=.%
-    if exist "%TEMP%\WinTools.bat" del "%TEMP%\WinTools.bat"
+    echo [INFO] Загрузка новой версии...
+    powershell -command "Invoke-WebRequest -Uri '%GITHUB_DOWNLOAD_URL%' -OutFile '%TARGET_DIR%\WinTools_new.bat'" >nul 2>&1
+    if %errorlevel%==0 (
+        echo [SUCCESS] Новая версия загружена.
+        move /y "%TARGET_DIR%\WinTools_new.bat" "%TARGET_DIR%\WinTools.bat" >nul 2>&1
+        echo [INFO] Утилита обновлена до версии %GITHUB_VERSION%.
+        >> "%LOG_FILE%" echo UPDATE_SUCCESS %TIME::=.% VERSION=%GITHUB_VERSION%
+        echo Перезапустите скрипт для использования новой версии.
+    ) else (
+        echo [ERROR] Не удалось загрузить новую версию. Проверьте интернет‑соединение.
+        >> "%LOG_FILE%" echo UPDATE_FAILED %TIME::=.%
+    )
 ) else (
-    echo [ERROR] Ошибка при обновлении. Код robocopy: %errorlevel%
-    >> "%LOG_FILE%" echo UPDATE_FAILED %TIME::=.% ERROR=%errorlevel%
+    echo [INFO] Обновление отменено.
 )
-
 pause
-)
 goto menu
 
-:: --- 11. СТИЛЬ ---
+:: --- 11. СМЕНА СТИЛЯ ---
 :style
-echo Выберите стиль текста:
-echo 0. Чёрный
-echo 1. Синий
-echo 2. Зелёный
-echo 3. Голубой
-echo 4. Красный
-echo 5. Пурпурный
-echo 6. Жёлтый
-echo 7. Белый
-echo 8. Серый
-echo 9. Светло‑синий
-echo A. Светло‑зелёный
-echo B. Светло‑голубой
-echo C. Светло‑красный
-echo D. Светло‑пурпурный
-echo E. Светло‑жёлтый
-echo F. Ярко‑белый
-set /p text_choice="Выберите цвет текста (0-F): "
+echo Выберите цветовую схему:
+echo 1. Стандартный (белый текст на чёрном)
+echo 2. Зелёный на чёрном
+echo 3. Синий на чёрном
+echo 4. Жёлтый на чёрном
+echo 5. Сохранить текущую
+set /p style_choice="Выберите опцию (1-5): "
 
-:: Проверка корректности ввода для цвета текста
-if not defined text_choice goto style
-if "%text_choice%" lss "0" goto style
-if /i "%text_choice%" gtr "F" goto style
-
-echo.
-echo Выберите цвет фона:
-echo 0. Чёрный
-echo 1. Синий
-echo 2. Зелёный
-echo 3. Голубой
-echo 4. Красный
-echo 5. Пурпурный
-echo 6. Жёлтый
-echo 7. Белый
-echo 8. Серый
-echo 9. Светло‑синий
-echo A. Светло‑зелёный
-echo B. Светло‑голубой
-echo C. Светло‑красный
-echo D. Светло‑пурпурный
-echo E. Светло‑жёлтый
-echo F. Ярко‑белый
-set /p bg_choice="Выберите цвет фона (0-F): "
-
-:: Проверка корректности ввода для цвета фона
-if not defined bg_choice goto style
-if "%bg_choice%" lss "0" goto style
-if /i "%bg_choice%" gtr "F" goto style
-
-:: Проверка на совпадение цветов
-if /i "%text_choice%"=="%bg_choice%" (
-    echo ОШИБКА: Цвет текста и фона совпадают! Выберите разные цвета.
-    timeout /t 2 /nobreak >nul
-    goto style
+if "%style_choice%"=="1" (
+    color 07
+    echo Цвет изменён на стандартный.
+    echo >"%~dp0color_settings.txt" 07
 )
-
-:: Установка комбинации цветов
-color %bg_choice%%text_choice%
-
-:: Сохранение в файл
-echo %bg_choice%%text_choice% > "%~dp0color_settings.txt"
-echo Цвет изменён и сохранён: текст %text_choice%, фон %bg_choice%!
-timeout /t 1 /nobreak >nul
+if "%style_choice%"=="2" (
+    color 0A
+    echo Цвет изменён на зелёный.
+    echo >"%~dp0color_settings.txt" 0A
+)
+if "%style_choice%"=="3" (
+    color 09
+    echo Цвет изменён на синий.
+    echo >"%~dp0color_settings.txt" 09
+)
+if "%style_choice%"=="4" (
+    color 0E
+    echo Цвет изменён на жёлтый.
+    echo >"%~dp0color_settings.txt" 0E
+)
+if "%style_choice%"=="5" (
+    echo Текущая цветовая схема сохранена.
+)
+>> "%LOG_FILE%" echo STYLE_CHANGED %TIME::=.% CHOICE=%style_choice%
 goto menu
 
 :: --- 12. ПИНГ ---
 :ping
-set /p HOST="Введите адрес сайта или IP (например, www.google.com или 216.239.38.120): "
-
-if "%HOST%"=="" (
-    echo Вы ничего не ввели!
-    pause
-    goto menu
-)
-
+set /p TARGET="Введите адрес для пинга (например, google.com): "
+if "%TARGET%"=="" goto ping
 echo.
-echo Замер пинга до %HOST%...
-echo ---------------------------
-ping %HOST% -n 4
-
-
-echo.
-set /p show_details="Показать расширенную статистику? (Y/N): "
-if /i "%show_details%"=="Y" ping %HOST% -n 10
-
+echo Пинг до %TARGET%...
+ping %TARGET%
 pause
 goto menu
 
-:: --- 13. ВЫХОД ---
-:exit_script
-echo [INFO] Выход. Журнал сохранён в: %LOG_FILE%
->> "%LOG_FILE%" echo EXIT %TIME::=.%
-echo ======================================
+:: --- 13. ОТЧЁТ О СИСТЕМЕ ---
+:system_report
+echo [INFO] Сбор информации о системе...
+echo === SYSTEM REPORT === >> "%LOG_FILE%"
+systeminfo | findstr /B /C:"OS Name" /C:"OS Version" /C:"System Manufacturer" /C:"System Model" /C:"Total Physical Memory" >> "%LOG_FILE%" 2>nul
+wmic cpu get name,NumberOfCores,NumberOfLogicalProcessors >> "%LOG_FILE%" 2>nul
+echo REPORT_GENERATED %TIME::=.% >> "%LOG_FILE%"
+echo Отчёт сохранён в лог.
 pause
-exit /b 0
+goto menu
 
+:: --- 14. ОЧИСТКА КОРЗИНЫ ---
+:empty_recyclebin
+echo [INFO] Очистка корзины...
+powershell -command "Clear-RecycleBin -Force -ErrorAction SilentlyContinue" >nul 2>&1
+if %errorlevel%==0 (
+    echo [OK] Корзина очищена.
+    >> "%LOG_FILE%" echo EMPTY_RECYCLEBIN_SUCCESS %TIME::=.%
+) else (
+    echo [WARNING] Не удалось очистить корзину (возможно, она пуста).
+)
+pause
+goto menu
+
+:: --- 15. ТРАССИРОВКА МАРШРУТА ---
+:tracert_tool
+set /p TARGET="Введите адрес для трассировки (например, google.com): "
+if "%TARGET%"=="" goto tracert_tool
+echo.
+echo Трассировка маршрута до %TARGET%...
+tracert %TARGET%
+pause
+goto menu
+
+:: --- 16. ПРОВЕРКА ОБНОВЛЕНИЙ WINDOWS ---
+:check_updates
+echo [INFO] Проверка обновлений Windows...
+wuauclt.exe /detectnow >nul 2>&1
+echo Запрошена проверка обновлений. Проверьте Центр обновления Windows.
+>> "%LOG_FILE%" echo CHECK_UPDATES_REQUESTED %TIME::=.%
+pause
+goto menu
+
+:: --- 17. СКАНИРОВАНИЕ WINDOWS DEFENDER ---
+:defender_scan
+if not exist "C:\Program Files\Windows Defender\MpCmdRun.exe" (
+
+echo [INFO] Запуск сканирования Windows Defender...
+start "" "C:\Program Files\Windows Defender\MpCmdRun.exe" -Scan -ScanType 2
+echo Запущено полное сканирование Defender.
+>> "%LOG_FILE%" echo DEFENDER_SCAN_STARTED %TIME::=.%
+pause
+goto menu
+
+:: --- 18. УПРАВЛЕНИЕ СЛУЖБАМИ ---
+:manage_services
+echo Выберите службу для управления:
+echo 1. Отключить Superfetch
+echo 2. Включить Superfetch
+echo 3. Назад в меню
+set /p svc_choice="Выберите опцию (1-3): "
+
+if "%svc_choice%"=="1" (
+    sc config SysMain start= disabled >nul 2>&1 && sc stop SysMain >nul 2>&1
+    echo Superfetch отключён.
+    >> "%LOG_FILE%" echo SUPERFETCH_DISABLED %TIME::=.%
+)
+if "%svc_choice%"=="2" (
+    sc config SysMain start= auto >nul 2>&1 && sc start SysMain >nul 2>&1
+    echo Superfetch включён.
+    >> "%LOG_FILE%" echo SUPERFETCH_ENABLED %TIME::=.%
+)
+goto menu
+
+:: --- 19. СОЗДАНИЕ ТОЧКИ ВОССТАНОВЛЕНИЯ ---
+:create_restore_point
+echo [INFO] Создание точки восстановления...
+powershell -command "Enable-ComputerRestore -Drive 'C:\'; Checkpoint-Computer -Description 'WinTools Backup' -RestorePointType 'MODIFY_SETTINGS'" >nul 2>&1
+if %errorlevel%==0 (
+    echo Точка восстановления создана.
+    >> "%LOG_FILE%" echo RESTORE_POINT_CREATED %TIME::=.%
+) else (
+    echo Ошибка создания точки восстановления.
+)
+pause
+goto menu
+
+:: --- 20. МОНИТОРИНГ ПРОЦЕССОВ ---
+:process_monitor
+echo Список запущенных процессов:
+tasklist | findstr /I "chrome firefox explorer"
+echo Для полного списка выполните tasklist в командной строке.
+pause
+goto menu
+
+
+:: --- 21. ГЕНЕРАТОР ПАРОЛЕЙ С ВЫБОРОМ ДЛИНЫ ---
+:password_generator
+set "chars=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#@#$%^&*"
+
+:get_length
+set /p PASS_LENGTH="Введите длину пароля (рекомендуется 8-32 символа): "
+
+:: Валидация ввода
+if not defined PASS_LENGTH (
+    echo Длина не может быть пустой. Попробуйте снова.
+    goto get_length
+)
+
+:: Проверка, что введено число
+echo %PASS_LENGTH%| findstr /R /C:"^[0-9][0-9]*$" >nul
+if errorlevel 1 (
+    echo Введите числовое значение. Попробуйте снова.
+    goto get_length
+)
+
+:: Ограничение длины
+if %PASS_LENGTH% LSS 1 (
+    echo Минимальная длина — 1 символ. Попробуйте снова.
+    goto get_length
+)
+if %PASS_LENGTH% GTR 128 (
+    echo Максимальная длина — 128 символов. Попробуйте снова.
+    goto get_length
+)
+
+:: Генерация пароля
+setlocal enabledelayedexpansion
+set "pass="
+for /L %%i in (1,1,%PASS_LENGTH%) do (
+    set /a "idx=!random! %% 70"
+    for %%j in (!idx!) do set "pass=!pass!!chars:~%%j,1!"
+)
+echo Сгенерированный пароль: !pass!
+endlocal
+
+:: Копирование в буфер обмена (опционально)
+set /p copy_choice="Скопировать пароль в буфер обмена? (Y/N): "
+if /i "%copy_choice%"=="Y" (
+    echo !pass!| clip
+    echo Пароль скопирован в буфер обмена.
+)
+
+>> "%LOG_FILE%" echo PASSWORD_GENERATED LENGTH=%PASS_LENGTH% %TIME::=.%
+pause
+goto menu
+
+:: --- 22. ВЫХОД ---
+:exit_script
+echo [INFO] Завершение работы WinTools...
+echo ===========================
+echo === WinTools Log ===
+echo End: %TIMESTAMP%
+echo User: %USERNAME%
+echo Host: %COMPUTERNAME%
+echo ---------------------------
+echo.
+echo Спасибо за использование WinTools!
+timeout /t 3 /nobreak >nul
+exit
+
+:: --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+
+:: Функция цветного вывода
+:color_echo
+set "text=%~2"
+if "%~1"=="success" color 0A & echo [SUCCESS] %text% & color 07
+if "%~1"=="error" color 0C & echo [ERROR] %text% & color 07
+if "%~1"=="info" color 0B & echo [INFO] %text% & color 07
+goto :eof
+
+:: Проверка прав администратора
+:check_admin
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    call :color_echo error "Запустите этот скрипт от имени администратора!"
+    echo Check log: %LOG_FILE%
+    pause
+    exit /b 1
+)
+call :color_echo success "Права администратора подтверждены."
+goto :eof
+
+:: Создание директорий
+:create_dirs
+if not exist "%MAIN%" mkdir "%MAIN%" >nul 2>&1
+if not exist "%LOG_DIR%" mkdir "%LOG_DIR%" >nul 2>&1
+if not exist "%BACKUP_DIR%" mkdir "%BACKUP_DIR%" >nul 2>&1
+if not exist "%CONFIG_DIR%" mkdir "%CONFIG_DIR%" >nul 2>&1
+goto :eof
+
+:: Загрузка конфигурации
+:load_config
+if exist %CONFIG_FILE% (
+    call %CONFIG_FILE% >nul 2>&1
+) else (
+    echo [WARNING] Конфигурационный файл не найден. Загрузка по умолчанию...
+    powershell -command "Invoke-WebRequest -Uri '%GITHUB_DOWNLOAD_URL:WinTools.bat=config.bat%' -OutFile '%CONFIG_FILE%'" >nul 2>&1
+    if exist %CONFIG_FILE% call %CONFIG_FILE% >nul 2>&1
+)
+goto :eof
+
+:: Запись в лог
+:write_log
+>> "%LOG_FILE%" echo %*
+goto :eof
+
+:: Основной блок инициализации
+:init
+call :check_admin
+call :create_dirs
+call :load_config
+
+:: Форматируем временную метку без спецсимволов
+set "TIMESTAMP=%DATE% %TIME%"
+set "TIMESTAMP=!TIMESTAMP:/=-%"
+set "TIMESTAMP=!TIMESTAMP::=-%"
+set "TIMESTAMP=!TIMESTAMP: =-%"
+
+:: Записываем начало сессии в лог
+>> "%LOG_FILE%" echo ===========================
+>> "%LOG_FILE%" echo === WinTools Log ===
+>> "%LOG_FILE%" echo Start: %TIMESTAMP%
+>> "%LOG_FILE%" echo User: %USERNAME%
+>> "%LOG_FILE%" echo Host: %COMPUTERNAME%
+>> "%LOG_FILE%" echo ---------------------------
+goto menu
+
+:: Запуск инициализации при старте
+call :init
+
+:: Если скрипт запущен с аргументом, выполняем соответствующую функцию
+if "%1" neq "" (
+    goto %1
+)
+
+:: По умолчанию показываем меню
+goto menu
