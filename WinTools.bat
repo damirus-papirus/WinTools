@@ -36,6 +36,12 @@ for %%F in ("%LOG_FILE%") do (
     )
 )
 
+ping -n 2 www.ya.ru >nul 2>&1
+
+if %errorlevel% neq 0 (
+    powershell -Command "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show('Нет доступа к интернету. Некоторые функции могут не работать', 'Network Error','OK', [System.Windows.Forms.MessageBoxIcon]::Error)">nul
+)
+
 :: Форматирование временной метки (ISO формат)
 for /f "tokens=*" %%a in ('powershell -command "Get-Date -Format 'yyyy-MM-dd HH:mm:ss'"') do set "TIMESTAMP=%%a"
 
@@ -797,3 +803,4 @@ shutdown /r /t 5 /c "WinTools: перезагрузка по запросу по
 echo Перезагрузка через 5 секунд...
 pause
 goto menu
+
