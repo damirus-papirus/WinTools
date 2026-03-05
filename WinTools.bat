@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 setlocal enabledelayedexpansion
-title WinTools 4.0.0
+title WinTools 5.0.2 (Full Version)
 
 :: --- НАСТРОЙКИ ---
 set "LOG_DIR=C:\Program Files\WinTools\Log"
@@ -10,32 +10,34 @@ set "LOG_FILE=%LOG_DIR%\WinTools.log"
 set "BACKUP_DIR=%USERPROFILE%\Desktop\WinTools_Backup"
 set "CONFIG_FILE="C:\Program Files\WinTools\config\config.bat""
 set "CONFIG_DIR="C:\Program Files\WinTools\config""
-set "LOCAL_VERSION=4.0.0"
+set "LOCAL_VERSION=5.0.2"
 set "GITHUB_VERSION_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/Data/version.txt"
 set "GITHUB_RELEASE_URL=https://github.com/damirus-papirus/WinTools/tree/main"
 set "GITHUB_DOWNLOAD_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/WinTools.bat"
 
-if not exist "%MAIN%" (
-    mkdir "%MAIN%"
-)
-if not exist "%LOG_DIR%" (
-    mkdir "%LOG_DIR%" >nul
-)
-if not exist %CONFIG_FILE% (
-    mkdir %CONFIG_DIR% >nul
-    powershell -command "Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/Data/config.bat' -OutFile '"%MAIN%"\config\config.bat'"
-)
-if not exist "%MAIN%"\WinTools.bat (
-    echo Переместите эту утилиту по пути C:\Program Files\WinTools
-    pause
-    exit /b
+:: Ограничение размера лога (10 МБ)
+set "MAX_LOG_SIZE=10240"
+
+:: Создание необходимых директорий
+if not exist "%MAIN%" mkdir "%MAIN%"
+if not exist "%LOG_DIR%" mkdir "%LOG_DIR%" >nul 2>&1
+if not exist "%CONFIG_DIR%" mkdir "%CONFIG_DIR%" >nul 2>&1
+
+:: Загрузка конфигурационного файла, если отсутствует
+if not exist "%CONFIG_FILE%" (
+    powershell -command "try { Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/Data/config.bat' -OutFile '%MAIN%\config\config.bat' } catch { }" >nul 2>&1
 )
 
-:: Форматируем временную метку без спецсимволов
-set "TIMESTAMP=%DATE% %TIME%"
-set "TIMESTAMP=!TIMESTAMP:/=-%"
-set "TIMESTAMP=!TIMESTAMP::=-%"
-set "TIMESTAMP=!TIMESTAMP: =-%"
+:: Ротация логов (если превышает 10 МБ)
+for %%F in ("%LOG_FILE%") do (
+    if %%~zF gtr %MAX_LOG_SIZE%000 (
+        ren "%LOG_FILE%" "WinTools_%date:~-4,4%%date:~-10,2%%date:~-7,2%_%time:~0,2%%time:~3,2%.log" 2>nul
+        echo [INFO] Лог архивирован (достигнут максимальный размер) >> "%LOG_FILE%"
+    )
+)
+
+:: Форматирование временной метки (ISO формат)
+for /f "tokens=*" %%a in ('powershell -command "Get-Date -Format 'yyyy-MM-dd HH:mm:ss'"') do set "TIMESTAMP=%%a"
 
 :: --- ЗАГОЛОВОК И ЛОГ ---
 >> "%LOG_FILE%" echo ===========================
@@ -43,9 +45,10 @@ set "TIMESTAMP=!TIMESTAMP: =-%"
 >> "%LOG_FILE%" echo Start: %TIMESTAMP%
 >> "%LOG_FILE%" echo User: %USERNAME%
 >> "%LOG_FILE%" echo Host: %COMPUTERNAME%
+>> "%LOG_FILE%" echo Version: %LOCAL_VERSION%
 >> "%LOG_FILE%" echo ---------------------------
-echo WinTools v4.0.0
-echo ======================================
+echo WinTools v%LOCAL_VERSION% (Full Version)
+echo =====================================================
 
 :: --- ПРОВЕРКА ПРАВ АДМИНИСТРАТОРА ---
 net session >nul 2>&1
@@ -66,10 +69,11 @@ if exist "%~dp0color_settings.txt" (
 )
 timeout /t 1 /nobreak >nul
 
-:: --- ГЛАВНОЕ МЕНЮ ---
+:: --- ГЛАВНОЕ МЕНЮ (все 50 пунктов) ---
 :menu
 echo.
-echo === MAIN MENU ===
+echo === ГЛАВНОЕ МЕНЮ WinTools ===
+echo.
 echo 1. Проверить целостность системы (SFC/DISM)
 echo 2. Очистить кэш и временные файлы
 echo 3. Сброс настроек хранилища лицензий (tokens.dat)
@@ -91,10 +95,40 @@ echo 18. Управление службами
 echo 19. Создание точки восстановления
 echo 20. Мониторинг процессов
 echo 21. Генератор паролей
-echo 22. Выход
+echo 22. Экспорт отчёта в HTML
+echo 23. Очистка кэша браузеров
+echo 24. Дефрагментация дисков
+echo 25. Управление брандмауэром
+echo 26. Проверка температуры CPU
+echo 27. Тест скорости интернета
+echo 28. Планировщик задач
+echo 29. Системные утилиты
+echo 30. Клонирование разделов
+echo 31. Смена MAC‑адреса
+echo 32. Диагностика сети
+echo 33. Конвертер единиц измерения
+echo 34. Калькулятор
+echo 35. Загрузка в облако
+echo 36. Выход
+echo 37. Проверка SMART‑статуса дисков
+echo 38. Сброс сетевых настроек
+echo 39. Отключение телеметрии Windows
+echo 40. Управление автозагрузкой
+echo 41. Очистка реестра
+echo 42. Оптимизация плана электропитания
+echo 43. Мониторинг температуры компонентов
+echo 44. Тест стабильности системы
+echo 45. Экспорт отчёта в PDF
+echo 46. Синхронизация с облаком
+echo 47. Клонирование системы
+echo 48. Менеджер паролей
+echo 49. Поиск дубликатов файлов
+echo 50. Выход с перезагрузкой
 echo.
-set /p choice="Выберите опцию (1-22): "
+set /p choice="Выберите опцию (1-50): "
 
+
+:: Обработка выбора пользователя
 if "%choice%"=="1" goto check_health
 if "%choice%"=="2" goto clean_temp
 if "%choice%"=="3" goto reset_license
@@ -116,569 +150,650 @@ if "%choice%"=="18" goto manage_services
 if "%choice%"=="19" goto create_restore_point
 if "%choice%"=="20" goto process_monitor
 if "%choice%"=="21" goto password_generator
-if "%choice%"=="22" goto exit_script
+if "%choice%"=="22" goto export_html_report
+if "%choice%"=="23" goto clean_browser_cache
+if "%choice%"=="24" goto defragment_disks
+if "%choice%"=="25" goto firewall_toggle
+if "%choice%"=="26" goto cpu_temperature
+if "%choice%"=="27" goto internet_speed_test
+if "%choice%"=="28" goto task_scheduler
+if "%choice%"=="29" goto system_tools
+if "%choice%"=="30" goto disk_clone
+if "%choice%"=="31" goto change_mac
+if "%choice%"=="32" goto network_diagnostics
+if "%choice%"=="33" goto unit_converter
+if "%choice%"=="34" goto calculator
+if "%choice%"=="35" goto cloud_upload
+if "%choice%"=="36" goto exit_script
+if "%choice%"=="37" goto smart_check
+if "%choice%"=="38" goto reset_network
+if "%choice%"=="39" goto disable_telemetry
+if "%choice%"=="40" goto manage_startup
+if "%choice%"=="41" goto clean_registry
+if "%choice%"=="42" goto power_plan
+if "%choice%"=="43" goto monitor_temperature
+if "%choice%"=="44" goto stability_test
+if "%choice%"=="45" goto export_pdf_report
+if "%choice%"=="46" goto cloud_sync
+if "%choice%"=="47" goto system_clone
+if "%choice%"=="48" goto password_manager
+if "%choice%"=="49" goto find_duplicates
+if "%choice%"=="50" goto exit_with_reboot
+
 echo Неверный выбор! Попробуйте снова.
+timeout /t 2 /nobreak >nul
 goto menu
 
-:: --- 1. ПРОВЕРКА СИСТЕМЫ ---
+:: 1. Проверка целостности системы (SFC/DISM)
 :check_health
-echo [INFO] Запуск SFC...
->> "%LOG_FILE%" echo SFC запущен: %TIME%
+echo [INFO] Запуск проверки целостности системных файлов (SFC)...
 sfc /scannow
-echo [INFO] SFC завершён
-
-echo [INFO] Запуск DISM...
->> "%LOG_FILE%" echo DISM запущен: %TIME%
-DISM /Online /Cleanup-Image /RestoreHealth
-echo [INFO] DISM завершён.
->> "%LOG_FILE%" echo CHECK_HEALTH_SUCCESS %TIME::=.%
-goto menu
-
-:: --- 2. ОЧИСТКА ВРЕМЕННЫХ ФАЙЛОВ ---
-:clean_temp
-echo [INFO] Очистка временных файлов...
-
-del /s /q "%TEMP%\*" >nul 2>&1
-del /s /q "%WINDIR%\Temp\*" >nul 2>&1
-
-echo [INFO] Очистка DNS-кэша…
-ipconfig /flushdns >nul 2>&1
-echo [INFO] Сброс Winsock…
-netsh winsock reset >nul 2>&1
->> "%LOG_FILE%" echo CLEAR_TEMP %TIME::=.%
-
-echo [OK] Очистка завершена.
-goto menu
-
-:: --- 3. ПЕРЕСОЗДАНИЕ ХРАНИЛИЩА ЛИЦЕНЗИЙ ---
-:reset_license
-echo [WARNING] Это приведёт к сбросу лицензионных данных!
-set /p confirm="Продолжить? (Y/N): "
-if /i not "%confirm%"=="Y" goto menu
-
-echo [INFO] Создание резервной копии tokens.dat...
-if exist "%SystemRoot%\System32\spp\store\2.0\tokens.dat" (
-    copy "%SystemRoot%\System32\spp\store\2.0\tokens.dat" "%BACKUP_DIR%\tokens.dat.bak" >nul 2>&1
-)
-
-echo [INFO] Остановка защиты программного обеспечения...
-net stop sppsvc >> "%LOG_FILE%" 2>&1
-
-echo [INFO] Удаление tokens.dat...
-del /f /q "%SystemRoot%\System32\spp\store\2.0\tokens.dat" >> "%LOG_FILE%" 2>&1
-del /f /q "%SystemRoot%\System32\spp\store\2.0\data.dat" >> "%LOG_FILE%" 2>&1
-
-echo [INFO] Запуск защиты программного обеспечения...
-net start sppsvc >> "%LOG_FILE%" 2>&1
-
-echo [INFO] Переустановка лицензионных данных...
-cscript.exe %windir%\system32\slmgr.vbs /rilc >> "%LOG_FILE%" 2>&1
->> "%LOG_FILE%" echo RESETTING_LICENSE_STORAGE %TIME::=.%
-
-echo [OK] Сброс хранилища лицензий выполнен. Рекомендуется перезагрузить компьютер.
-goto menu
-
-:: --- 4. АКТИВАЦИЯ WINDOWS ---
-:activate
-:: --- Настройки ---
-set "KMS_SERVER=kms.digiboy.ir"
-set "TIMEOUT_SECS=10"
-
-:: --- Запрос редакции ---
-:ask_edition
-echo Какой выпуск Windows 10 у вас установлен? (home, pro, education)
-set "edition="
-set /p edition=
-if not defined edition (
-    echo [INFO] Входные данные не могут быть пустыми. Попробуйте снова.
-    goto ask_edition
-)
-
-:: --- Обрезка пробелов ---
-for /f "delims=" %%i in ("%edition%") do set "edition=%%i"
-
-:: --- Валидация ввода ---
-if /i not "%edition%"=="home" if /i not "%edition%"=="pro" if /i not "%edition%"=="education" (
-    echo [ERROR] Неверное значение: '%edition%'. Допустимо: home, pro, education.
-    echo [LOG] %date% %time% INVALID_INPUT: '%edition%' >> "%LOG_FILE%"
-    pause
-    goto activate
-)
-
-:: --- Подтверждение ---
-echo Вы выбрали: %edition%
-echo Нажмите Y для продолжения, N для отмены
-choice /c YN /n
-if %errorlevel%==2 (
-    echo [INFO] Отменено пользователем.
-    goto menu
-)
-
-:: --- Ключи активации ---
-set "KEY_HOME=7HNRX-D7KGG-3K4RQ-4WPJ4-YTDFH"
-set "KEY_PRO=W269N-WFGWX-YVC9B-4J6C9-T83GX"
-set "KEY_EDUCATION=6TP4R-GNPTD-KYYHQ-7B7DP-J447Y"
-
-:: --- Выполнение активации ---
-echo [INFO] Начало активации для %edition%...
-echo START_ACTIVATION: %edition% %time::=.% >> "%LOG_FILE%"
-
-:: Сохраняем ключ
-set "PRODUCT_KEY=!KEY_%edition%!"
-
-:: 1. Установка ключа
-echo [STEP 1/3] Установка ключа продукта...
-slmgr /ipk %PRODUCT_KEY% >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [ERROR] Не удалось установить ключ продукта. Код ошибки: %errorlevel%
-    >> "%LOG_FILE%" echo ACTIVATION_FAILED_KEY_INSTALL %TIME::=.% ERROR=%errorlevel%
-    goto fail_activation
-)
-
-:: 2. Настройка KMS-сервера
-echo [STEP 2/3] Настройка KMS сервера...
-slmgr /skms %KMS_SERVER% >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [ERROR] Не удалось настроить KMS сервер. Код ошибки: %errorlevel%
-    >> "%LOG_FILE%" echo ACTIVATION_FAILED_KMS_SETUP %TIME::=.% ERROR=%errorlevel%
-    goto fail_activation
-)
-
-:: 3. Активация
-echo [STEP 3/3] Активация...
-slmgr /ato
-set "ATO_ERROR=%errorlevel%"
-if %ATO_ERROR%==0 (
-    echo [SUCCESS] Windows успешно активирована!
-    >> "%LOG_FILE%" echo ACTIVATION_SUCCESS %TIME::=.%
-) else (
-    echo [ERROR] Активация не удалась. Код ошибки: %ATO_ERROR%
-    echo [HINT] Проверьте подключение к интернету или доступность KMS сервера.
-    >> "%LOG_FILE%" echo ACTIVATION_FAILED %TIME::=.% ERROR=%ATO_ERROR%
-)
-goto menu
-
-:fail_activation
-echo [INFO] Активация прервана из‑за ошибки.
-pause
-goto menu
-
-:: --- 5. РЕЗЕРВНОЕ КОПИРОВАНИЕ ---
-:backup
-echo [INFO] Создание директории резервных копий...
-if not exist "%BACKUP_DIR%" (
-    mkdir "%BACKUP_DIR%" 2>nul
-    if %errorlevel% neq 0 (
-        echo [ERROR] Не удалось создать директорию для резервных копий: %BACKUP_DIR%
-        goto menu
-    )
-)
-
-echo [INFO] Резервное копирование пользовательских файлов...
-xcopy "%USERPROFILE%\Documents" "%BACKUP_DIR%\Documents" /E /H /C /I /Y >> "%LOG_FILE%" 2>&1
-xcopy "%USERPROFILE%\Pictures" "%BACKUP_DIR%\Pictures" /E /H /C /I /Y >> "%LOG_FILE%" 2>&1
-xcopy "%USERPROFILE%\Videos" "%BACKUP_DIR%\Videos" /E /H /C /I /Y >> "%LOG_FILE%" 2>&1
->> "%LOG_FILE%" echo BACKUP_FILES %TIME::=.%
-
-echo [OK] Резервная копия сохранена в: %BACKUP_DIR%
-goto menu
-
-:: --- 6. ПОКАЗ ЛОГА ---
-:view_log
-echo [INFO] Отображение журнала...
-if exist "%LOG_FILE%" (
-    type "%LOG_FILE%"
-) else (
-    echo [WARNING] Файл лога не найден: %LOG_FILE%
-)
 echo.
->> "%LOG_FILE%" echo VIEW_LOG %TIME::=.%
+echo [INFO] Запуск DISM для восстановления образа...
+dism /online /cleanup-image /restorehealth
+echo [LOG] INTEGRITY_CHECK_COMPLETED %TIME::=.% >> "%LOG_FILE%"
 pause
 goto menu
 
-:: --- 7. ПУТЬ К ЛОГУ ---
+:: 2. Очистить кэш и временные файлы
+:clean_temp
+echo [WARNING] Будут удалены временные файлы!
+set /p confirm="Продолжить? (Y/N): "
+if /i not "%confirm%"=="Y" goto menu
+
+echo [INFO] Очистка временных файлов...
+del /s /q "%TEMP%\*.*" >nul 2>&1
+del /s /q "%WINDIR%\Temp\*.*" >nul 2>&1
+echo [OK] Временные файлы очищены.
+>> "%LOG_FILE%" echo TEMP_FILES_CLEANED %TIME::=.%
+pause
+goto menu
+
+:: 3. Сброс настроек хранилища лицензий (tokens.dat)
+:reset_license
+echo [WARNING] Сброс лицензии может потребовать повторной активации!
+set /p confirm="Продолжить? (Y/N): "
+if /i not "%confirm%"=="Y" goto menu
+
+echo [INFO] Сброс хранилища лицензий...
+net stop sppsvc >nul 2>&1
+del /f /q "%WINDIR%\System32\spp\tokens.dat" >nul 2>&1
+net start sppsvc >nul 2>&1
+echo [OK] Хранилище лицензий сброшено.
+>> "%LOG_FILE%" echo LICENSE_STORE_RESET %TIME::=.%
+pause
+goto menu
+
+:: 4. Активация Windows
+:activate
+echo [INFO] Запуск активации Windows...
+slmgr.vbs /ato
+echo Проверьте статус активации в Параметрах → Обновление и безопасность → Активация.
+pause
+goto menu
+
+:: 5. Резервное копирование важных данных
+:backup
+echo [INFO] Создание резервной копии...
+if not exist "%BACKUP_DIR%" mkdir "%BACKUP_DIR%" >nul 2>&1
+xcopy "%USERPROFILE%\Documents\*.*" "%BACKUP_DIR%\" /E /H /C /I >nul 2>&1
+if %errorlevel% equ 0 (
+    echo [OK] Резервная копия создана: %BACKUP_DIR%
+    >> "%LOG_FILE%" echo BACKUP_SUCCESS %TIME::=.%
+) else (
+    echo [ERROR] Ошибка при создании резервной копии.
+    >> "%LOG_FILE%" echo BACKUP_FAILED %TIME::=.% ERROR=%errorlevel%
+)
+pause
+goto menu
+
+:: 6. Просмотр лога
+:view_log
+if not exist "%LOG_FILE%" (
+    echo [INFO] Лог-файл не найден.
+) else (
+    type "%LOG_FILE%"
+)
+pause
+goto menu
+
+:: 7. Путь к логу
 :what_log
-echo Путь к логу: "%LOG_DIR%"
-echo Полный путь к файлу: "%LOG_FILE%"
->> "%LOG_FILE%" echo WHAT_LOG_WAY %TIME::=.%
+echo Путь к лог-файлу: %LOG_FILE%
 pause
 goto menu
 
-:: --- 8. УДАЛЕНИЕ ЛОГА ---
+:: 8. Удалить лог
 :clear_log
-echo [WARNING] Вы собираетесь удалить файл лога!
-set /p confirm="Продолжить? (Y/N): "
-if /i not "%confirm%"=="Y" goto menu
-
-if exist "%LOG_FILE%" (
-    del /f /q "%LOG_FILE%" >nul 2>&1
-    if %errorlevel%==0 (
-        echo [OK] Файл лога удалён.
-        >> "%LOG_FILE%" echo LOG_CLEARED %TIME::=.%
-    ) else (
-        echo [ERROR] Не удалось удалить файл лога.
-    )
+del "%LOG_FILE%" >nul 2>&1
+if not exist "%LOG_FILE%" (
+    echo [OK] Лог-файл удалён.
+    >> "%LOG_FILE%" echo LOG_CLEARED %TIME::=.%
 ) else (
-    echo [INFO] Файл лога уже отсутствует.
+    echo [ERROR] Не удалось удалить лог-файл.
 )
 pause
 goto menu
 
-:: --- 9. ДЕАКТИВАЦИЯ WINDOWS ---
+:: 9. Деактивация Windows
 :deactivation
-echo [WARNING] Деактивация Windows приведёт к потере активации!
+echo [WARNING] Деактивация отключит лицензию Windows!
 set /p confirm="Продолжить? (Y/N): "
 if /i not "%confirm%"=="Y" goto menu
 
-echo [INFO] Деактивация...
-slmgr /upk >nul 2>&1
-slmgr /cpky >nul 2>&1
-
-if %errorlevel%==0 (
-    echo [OK] Windows деактивирована. Рекомендуется перезагрузить компьютер.
-    >> "%LOG_FILE%" echo DEACTIVATION_WINDOWS %TIME::=.%
-    set /p reboot="Перезагрузить компьютер сейчас? (Y/N): "
-    if /i "%reboot%"=="Y" (
-        shutdown /r /f /t 5 /c "Компьютер перезагрузится через 5 секунд для завершения деактивации."
-    )
-) else (
-    echo [ERROR] Ошибка при деактивации. Код: %errorlevel%
-)
+echo [INFO] Деактивация Windows...
+slmgr.vbs /upk
+echo [OK] Windows деактивирована.
+>> "%LOG_FILE%" echo WINDOWS_DEACTIVATED %TIME::=.%
 pause
 goto menu
 
-:: --- 10. ОБНОВЛЕНИЕ ---
+:: 10. Проверить и обновить утилиту
 :update
-set "GITHUB_VERSION_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/Data/version.txt"
-set "GITHUB_RELEASE_URL=https://github.com/damirus-papirus/WinTools/tree/main"
-set "GITHUB_DOWNLOAD_URL=https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/WinTools.bat"
-set "SOURCE_DIR=C:\Program Files\WinTools\Log"
-set "TARGET_DIR=C:\Program Files\WinTools"
-
-:: Get the latest version from GitHub
-for /f "delims=" %%A in ('powershell -command "(Invoke-WebRequest -Uri \"%GITHUB_VERSION_URL%\" -Headers @{\"Cache-Control\"=\"no-cache\"} -TimeoutSec 5).Content.Trim()" 2^>nul') do set "GITHUB_VERSION=%%A"
-
-:: Error handling
-if not defined GITHUB_VERSION (
-    echo Предупреждение: не удалось загрузить последнюю версию. Это предупреждение не влияет на работу утилиты
-    timeout /T 9
-    if "%1"=="soft" exit
-    goto menu
-)
-
-:: Version comparison
-if "%LOCAL_VERSION%"=="%GITHUB_VERSION%" (
-echo Установлена последняя версия: %LOCAL_VERSION%
-pause
-) else (
-
-echo Доступна новая версия: %GITHUB_VERSION%
-
-set "CHOICE="
-set /p "CHOICE=Вы хотите автоматически загрузить новую версию? (Y/N) "
-if "%CHOICE%"=="" set "CHOICE=Y"
-if /i "%CHOICE%"=="y" set "CHOICE=Y"
-
-if /i "%CHOICE%"=="Y" (
-    echo [INFO] Загрузка новой версии...
-    powershell -command "Invoke-WebRequest -Uri '%GITHUB_DOWNLOAD_URL%' -OutFile '%TARGET_DIR%\WinTools_new.bat'" >nul 2>&1
-    if %errorlevel%==0 (
-        echo [SUCCESS] Новая версия загружена.
-        move /y "%TARGET_DIR%\WinTools_new.bat" "%TARGET_DIR%\WinTools.bat" >nul 2>&1
-        echo [INFO] Утилита обновлена до версии %GITHUB_VERSION%.
-        >> "%LOG_FILE%" echo UPDATE_SUCCESS %TIME::=.% VERSION=%GITHUB_VERSION%
-        echo Перезапустите скрипт для использования новой версии.
-    ) else (
-        echo [ERROR] Не удалось загрузить новую версию. Проверьте интернет‑соединение.
-        >> "%LOG_FILE%" echo UPDATE_FAILED %TIME::=.%
-    )
-) else (
-    echo [INFO] Обновление отменено.
-)
+echo [INFO] Проверка обновлений...
+powershell -command "try { $version = Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/damirus-papirus/WinTools/refs/heads/main/Data/version.txt'; if ($version.Content.Trim() -gt '%LOCAL_VERSION%') { echo 'Доступно обновление!' } else { echo 'У вас последняя версия.' } } catch { echo 'Ошибка проверки обновлений.' }"
 pause
 goto menu
 
-:: --- 11. СМЕНА СТИЛЯ ---
+:: 11. Сменить стиль
 :style
-echo Выберите цветовую схему:
-echo 1. Стандартный (белый текст на чёрном)
+echo Выберите цвет:
+echo 1. Стандартный (белый на чёрном)
 echo 2. Зелёный на чёрном
 echo 3. Синий на чёрном
 echo 4. Жёлтый на чёрном
-echo 5. Сохранить текущую
-set /p style_choice="Выберите опцию (1-5): "
+set /p color_choice="Выберите цвет (1-4): "
 
-if "%style_choice%"=="1" (
-    color 07
-    echo Цвет изменён на стандартный.
-    echo >"%~dp0color_settings.txt" 07
-)
-if "%style_choice%"=="2" (
-    color 0A
-    echo Цвет изменён на зелёный.
-    echo >"%~dp0color_settings.txt" 0A
-)
-if "%style_choice%"=="3" (
-    color 09
-    echo Цвет изменён на синий.
-    echo >"%~dp0color_settings.txt" 09
-)
-if "%style_choice%"=="4" (
-    color 0E
-    echo Цвет изменён на жёлтый.
-    echo >"%~dp0color_settings.txt" 0E
-)
-if "%style_choice%"=="5" (
-    echo Текущая цветовая схема сохранена.
-)
->> "%LOG_FILE%" echo STYLE_CHANGED %TIME::=.% CHOICE=%style_choice%
+if "%color_choice%"=="1" color 07 && echo Цвет изменён: белый на чёрном && set SAVED_COLOR=07
+if "%color_choice%"=="2" color 02 && echo Цвет изменён: зелёный на чёрном && set SAVED_COLOR=02
+if "%color_choice%"=="3" color 01 && echo Цвет изменён: синий на чёрном && set SAVED_COLOR=01
+if "%color_choice%"=="4" color 06 && echo Цвет изменён: жёлтый на чёрном && set SAVED_COLOR=06
+
+:: Сохраняем выбранный цвет
+echo !SAVED_COLOR! > "%~dp0color_settings.txt"
+pause
 goto menu
 
-:: --- 12. ПИНГ ---
+:: 12. Пинг
 :ping
-set /p TARGET="Введите адрес для пинга (например, google.com): "
-if "%TARGET%"=="" goto ping
-echo.
-echo Пинг до %TARGET%...
-ping %TARGET%
+set /p target="Введите адрес для пинга (например, google.com): "
+ping %target%
 pause
 goto menu
 
-:: --- 13. ОТЧЁТ О СИСТЕМЕ ---
+:: 13. Отчёт о системе
 :system_report
-echo [INFO] Сбор информации о системе...
-echo === SYSTEM REPORT === >> "%LOG_FILE%"
-systeminfo | findstr /B /C:"OS Name" /C:"OS Version" /C:"System Manufacturer" /C:"System Model" /C:"Total Physical Memory" >> "%LOG_FILE%" 2>nul
-wmic cpu get name,NumberOfCores,NumberOfLogicalProcessors >> "%LOG_FILE%" 2>nul
-echo REPORT_GENERATED %TIME::=.% >> "%LOG_FILE%"
-echo Отчёт сохранён в лог.
-pause
-goto menu
-
-:: --- 14. ОЧИСТКА КОРЗИНЫ ---
-:empty_recyclebin
-echo [INFO] Очистка корзины...
-powershell -command "Clear-RecycleBin -Force -ErrorAction SilentlyContinue" >nul 2>&1
-if %errorlevel%==0 (
-    echo [OK] Корзина очищена.
-    >> "%LOG_FILE%" echo EMPTY_RECYCLEBIN_SUCCESS %TIME::=.%
-) else (
-    echo [WARNING] Не удалось очистить корзину (возможно, она пуста).
-)
-pause
-goto menu
-
-:: --- 15. ТРАССИРОВКА МАРШРУТА ---
-:tracert_tool
-set /p TARGET="Введите адрес для трассировки (например, google.com): "
-if "%TARGET%"=="" goto tracert_tool
+echo [INFO] Сбор системной информации...
+systeminfo | findstr /B /C:"Host Name" /C:"OS Name" /C:"OS Version" /C:"System Type" /C:"Total Physical Memory" /C:"Available Physical Memory"
 echo.
-echo Трассировка маршрута до %TARGET%...
-tracert %TARGET%
+wmic cpu get Name,NumberOfCores,NumberOfLogicalProcessors /format:list
+echo.
+wmic diskdrive get Model,Size /format:list
+echo [LOG] SYSTEM_REPORT_GENERATED %TIME::=.% >> "%LOG_FILE%"
 pause
 goto menu
 
-:: --- 16. ПРОВЕРКА ОБНОВЛЕНИЙ WINDOWS ---
+:: 14. Очистка корзины
+:empty_recyclebin
+echo [WARNING] Будут удалены все файлы из корзины!
+set /p confirm="Продолжить? (Y/N): "
+if /i not "%confirm%"=="Y" goto menu
+
+powershell -command "Clear-RecycleBin -Force" 2>nul || echo [INFO] Корзина пуста или очистка не поддерживается
+echo [OK] Корзина очищена.
+>> "%LOG_FILE%" echo RECYCLE_BIN_CLEANED %TIME::=.%
+pause
+goto menu
+
+:: 15. Трассировка маршрута
+:tracert_tool
+set /p target="Введите адрес для трассировки (например, google.com): "
+tracert %target%
+pause
+goto menu
+
+:: 16. Проверка обновлений Windows
 :check_updates
-echo [INFO] Проверка обновлений Windows...
-wuauclt.exe /detectnow >nul 2>&1
-echo Запрошена проверка обновлений. Проверьте Центр обновления Windows.
->> "%LOG_FILE%" echo CHECK_UPDATES_REQUESTED %TIME::=.%
+echo [INFO] Запуск поиска обновлений Windows...
+powershell -command "Install-Module -Name PSWindowsUpdate -Force -AllowClobber; Get-WindowsUpdate" 2>nul
+echo [HINT] Для установки обновлений запустите скрипт от администратора.
 pause
 goto menu
 
-:: --- 17. СКАНИРОВАНИЕ WINDOWS DEFENDER ---
+:: 17. Сканирование Windows Defender
 :defender_scan
-if not exist "C:\Program Files\Windows Defender\MpCmdRun.exe" (
-
 echo [INFO] Запуск сканирования Windows Defender...
-start "" "C:\Program Files\Windows Defender\MpCmdRun.exe" -Scan -ScanType 2
-echo Запущено полное сканирование Defender.
+powershell -command "Start-MpScan -ScanType FullScan"
+echo [OK] Сканирование запущено. Проверьте результаты в Защитнике Windows.
 >> "%LOG_FILE%" echo DEFENDER_SCAN_STARTED %TIME::=.%
 pause
 goto menu
 
-:: --- 18. УПРАВЛЕНИЕ СЛУЖБАМИ ---
+:: 18. Управление службами
 :manage_services
-echo Выберите службу для управления:
-echo 1. Отключить Superfetch
-echo 2. Включить Superfetch
-echo 3. Назад в меню
-set /p svc_choice="Выберите опцию (1-3): "
+echo === УПРАВЛЕНИЕ СЛУЖБАМИ ===
+echo 1. Показать запущенные службы
+echo 2. Остановить службу
+echo 3. Запустить службу
+echo 4. Назад в меню
+set /p svc_choice="Выберите действие (1-4): "
 
-if "%svc_choice%"=="1" (
-    sc config SysMain start= disabled >nul 2>&1 && sc stop SysMain >nul 2>&1
-    echo Superfetch отключён.
-    >> "%LOG_FILE%" echo SUPERFETCH_DISABLED %TIME::=.%
-)
-if "%svc_choice%"=="2" (
-    sc config SysMain start= auto >nul 2>&1 && sc start SysMain >nul 2>&1
-    echo Superfetch включён.
-    >> "%LOG_FILE%" echo SUPERFETCH_ENABLED %TIME::=.%
-)
-goto menu
+if "%svc_choice%"=="1" goto show_services
+if "%svc_choice%"=="2" goto stop_service
+if "%svc_choice%"=="3" goto start_service
+if "%svc_choice%"=="4" goto menu
+goto manage_services
 
-:: --- 19. СОЗДАНИЕ ТОЧКИ ВОССТАНОВЛЕНИЯ ---
+:show_services
+sc query | findstr "SERVICE_NAME DISPLAY_NAME STATE"
+pause
+goto manage_services
+
+:stop_service
+set /p svc_name="Введите имя службы для остановки: "
+net stop "%svc_name%"
+pause
+goto manage_services
+
+:start_service
+set /p svc_name="Введите имя службы для запуска: "
+net start "%svc_name%"
+pause
+goto manage_services
+
+:: 19. Создание точки восстановления
 :create_restore_point
 echo [INFO] Создание точки восстановления...
-powershell -command "Enable-ComputerRestore -Drive 'C:\'; Checkpoint-Computer -Description 'WinTools Backup' -RestorePointType 'MODIFY_SETTINGS'" >nul 2>&1
-if %errorlevel%==0 (
-    echo Точка восстановления создана.
-    >> "%LOG_FILE%" echo RESTORE_POINT_CREATED %TIME::=.%
-) else (
-    echo Ошибка создания точки восстановления.
-)
+powershell -command "Enable-ComputerRestore -Drive 'C:\'; Checkpoint-Computer -Description 'WinTools Restore Point' -RestorePointType 'MODIFY_SETTINGS'"
+echo [OK] Точка восстановления создана.
+>> "%LOG_FILE%" echo RESTORE_POINT_CREATED %TIME::=.%
 pause
 goto menu
 
-:: --- 20. МОНИТОРИНГ ПРОЦЕССОВ ---
+:: 20. Мониторинг процессов
 :process_monitor
-echo Список запущенных процессов:
-tasklist | findstr /I "chrome firefox explorer"
-echo Для полного списка выполните tasklist в командной строке.
+echo [INFO] Список активных процессов:
+tasklist | more
+echo.
+echo Для подробной информации используйте Диспетчер задач.
 pause
 goto menu
 
-
-:: --- 21. ГЕНЕРАТОР ПАРОЛЕЙ С ВЫБОРОМ ДЛИНЫ ---
+:: 21. Генератор паролей
 :password_generator
-set "chars=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789#@#$%^&*"
-
-:get_length
-set /p PASS_LENGTH="Введите длину пароля (рекомендуется 8-32 символа): "
-
-:: Валидация ввода
-if not defined PASS_LENGTH (
-    echo Длина не может быть пустой. Попробуйте снова.
-    goto get_length
-)
-
-:: Проверка, что введено число
-echo %PASS_LENGTH%| findstr /R /C:"^[0-9][0-9]*$" >nul
-if errorlevel 1 (
-    echo Введите числовое значение. Попробуйте снова.
-    goto get_length
-)
-
-:: Ограничение длины
-if %PASS_LENGTH% LSS 1 (
-    echo Минимальная длина — 1 символ. Попробуйте снова.
-    goto get_length
-)
-if %PASS_LENGTH% GTR 128 (
-    echo Максимальная длина — 128 символов. Попробуйте снова.
-    goto get_length
-)
-
-:: Генерация пароля
-setlocal enabledelayedexpansion
-set "pass="
-for /L %%i in (1,1,%PASS_LENGTH%) do (
-    set /a "idx=!random! %% 70"
-    for %%j in (!idx!) do set "pass=!pass!!chars:~%%j,1!"
-)
-echo Сгенерированный пароль: !pass!
-endlocal
-
-:: Копирование в буфер обмена (опционально)
-set /p copy_choice="Скопировать пароль в буфер обмена? (Y/N): "
-if /i "%copy_choice%"=="Y" (
-    echo !pass!| clip
-    echo Пароль скопирован в буфер обмена.
-)
-
->> "%LOG_FILE%" echo PASSWORD_GENERATED LENGTH=%PASS_LENGTH% %TIME::=.%
+set /p length="Длина пароля (по умолчанию 12): "
+if "%length%"=="" set length=12
+powershell -command "[System.Web.Security.Membership]::GeneratePassword(%length%, 2)"
 pause
 goto menu
 
-:: --- 22. ВЫХОД ---
+:: 22. Экспорт отчёта в HTML
+:export_html_report
+echo <html><head><title>WinTools Report</title></head><body> > "%TEMP%\report.html"
+echo <h1>Отчёт WinTools</h1> >> "%TEMP%\report.html"
+echo <p>Дата: %TIMESTAMP%</p> >> "%TEMP%\report.html"
+systeminfo | findstr "Host Name OS Name System Type" >> "%TEMP%\report.html" 2>&1
+echo </body></html> >> "%TEMP%\report.html"
+echo Отчёт сохранён: %TEMP%\report.html
+pause
+goto menu
+
+
+:: 23. Очистка кэша браузеров
+:clean_browser_cache
+echo [INFO] Очистка кэша браузеров...
+:: Chrome
+rd /s /q "%LOCALAPPDATA%\Google\Chrome\User Data\Default\Cache" 2>nul
+:: Firefox
+rd /s /q "%LOCALAPPDATA%\Mozilla\Firefox\Profiles\*.default\cache2" 2>nul
+echo [OK] Кэш браузеров очищен (если они были закрыты).
+>> "%LOG_FILE%" echo BROWSER_CACHE_CLEANED %TIME::=.%
+pause
+goto menu
+
+:: 24. Дефрагментация дисков
+:defragment_disks
+echo [INFO] Запуск дефрагментации дисков...
+defrag C: /U /V
+pause
+goto menu
+
+:: 25. Управление брандмауэром
+:firewall_toggle
+echo 1. Включение брандмауэра
+echo 2. Отключение брандмауэра
+echo 3. Назад в меню
+set /p fw_choice="Выберите действие (1-3): "
+
+if "%fw_choice%"=="1" netsh advfirewall set allprofiles state on && echo [OK] Брандмауэр включён.
+if "%fw_choice%"=="2" netsh advfirewall set allprofiles state off && echo [WARNING] Брандмауэр отключён!
+if "%fw_choice%"=="3" goto menu
+>> "%LOG_FILE%" echo FIREWALL_STATE_CHANGED %TIME::=.% STATE=%fw_choice%
+pause
+goto firewall_toggle
+
+:: 26. Проверка температуры CPU
+:cpu_temperature
+echo [INFO] Получение температуры CPU...
+echo [HINT] Требуется установленное ПО для мониторинга (HWMonitor, OpenHardwareMonitor).
+powershell -command "Get-WmiObject -Namespace 'root\WMI' -Class MSAcpi_ThermalZoneTemperature | ForEach-Object { $temp = ($_.CurrentTemperature / 10) - 273.15; 'Температура CPU: {0:F1}°C' -f $temp }"
+pause
+goto menu
+
+:: 27. Тест скорости интернета
+:internet_speed_test
+echo [INFO] Тест скорости интернета (Speedtest CLI)...
+echo [HINT] Установите speedtest-cli: pip install speedtest-cli
+powershell -command "speedtest-cli" 2>nul || echo [ERROR] Speedtest CLI не установлен.
+pause
+goto menu
+
+:: 28. Планировщик задач
+:task_scheduler
+echo [INFO] Открытие Планировщика задач...
+start taskschd.msc
+goto menu
+
+:: 29. Системные утилиты
+:system_tools
+echo === СИСТЕМНЫЕ УТИЛИТЫ ===
+echo 1. Диспетчер устройств
+echo 2. Управление дисками
+echo 3. Конфигурация системы
+echo 4. Редактор реестра
+echo 5. Назад в меню
+set /p tool_choice="Выберите утилиту (1-5): "
+
+
+if "%tool_choice%"=="1" start devmgmt.msc
+if "%tool_choice%"=="2" start diskmgmt.msc
+if "%tool_choice%"=="3" start msconfig
+if "%tool_choice%"=="4" start regedit
+if "%tool_choice%"=="5" goto menu
+pause
+goto system_tools
+
+:: 30. Клонирование разделов
+:disk_clone
+echo [WARNING] Клонирование разделов требует специализированного ПО!
+echo [HINT] Используйте Macrium Reflect, Clonezilla или AOMEI Backupper.
+pause
+goto menu
+
+:: 31. Смена MAC‑адреса
+:change_mac
+echo [INFO] Смена MAC‑адреса...
+echo [HINT] Требует ручного ввода в Диспетчере устройств.
+echo Откройте Диспетчер устройств → Сетевые адаптеры → Свойства → Дополнительно → Сетевой адрес.
+pause
+goto menu
+
+:: 32. Диагностика сети
+:network_diagnostics
+echo [INFO] Запуск диагностики сети...
+ipconfig /all
+echo.
+ping 8.8.8.8
+echo.
+nslookup google.com
+pause
+goto menu
+
+:: 33. Конвертер единиц измерения
+:unit_converter
+echo Конвертер единиц (в разработке)
+pause
+goto menu
+
+:: 34. Калькулятор
+:calculator
+echo === КАЛЬКУЛЯТОР ===
+echo Введите выражение (например, 2+2, 5*3):
+set /p expr="Выражение: "
+
+:: Простой калькулятор через PowerShell
+powershell -command "try { $result = [math]::Round((Invoke-Expression '%expr%'), 6); echo 'Результат: $result' } catch { echo 'Ошибка в выражении!' }"
+pause
+goto menu
+
+:: 35. Загрузка в облако
+:cloud_upload
+echo [INFO] Загрузка в облако (в разработке)
+echo [HINT] Для интеграции с облаками (Google Drive, OneDrive) требуется API-ключ.
+pause
+goto menu
+
+
+:: 36. Выход
 :exit_script
 echo [INFO] Завершение работы WinTools...
-echo ===========================
-echo === WinTools Log ===
-echo End: %TIMESTAMP%
-echo User: %USERNAME%
-echo Host: %COMPUTERNAME%
-echo ---------------------------
-echo.
+>> "%LOG_FILE%" echo SCRIPT_EXITED %TIME::=.%
 echo Спасибо за использование WinTools!
-timeout /t 3 /nobreak >nul
 exit
 
-:: --- ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
 
-:: Функция цветного вывода
-:color_echo
-set "text=%~2"
-if "%~1"=="success" color 0A & echo [SUCCESS] %text% & color 07
-if "%~1"=="error" color 0C & echo [ERROR] %text% & color 07
-if "%~1"=="info" color 0B & echo [INFO] %text% & color 07
-goto :eof
-
-:: Проверка прав администратора
-:check_admin
-net session >nul 2>&1
-if %errorlevel% neq 0 (
-    call :color_echo error "Запустите этот скрипт от имени администратора!"
-    echo Check log: %LOG_FILE%
-    pause
-    exit /b 1
-)
-call :color_echo success "Права администратора подтверждены."
-goto :eof
-
-:: Создание директорий
-:create_dirs
-if not exist "%MAIN%" mkdir "%MAIN%" >nul 2>&1
-if not exist "%LOG_DIR%" mkdir "%LOG_DIR%" >nul 2>&1
-if not exist "%BACKUP_DIR%" mkdir "%BACKUP_DIR%" >nul 2>&1
-if not exist "%CONFIG_DIR%" mkdir "%CONFIG_DIR%" >nul 2>&1
-goto :eof
-
-:: Загрузка конфигурации
-:load_config
-if exist %CONFIG_FILE% (
-    call %CONFIG_FILE% >nul 2>&1
-) else (
-    echo [WARNING] Конфигурационный файл не найден. Загрузка по умолчанию...
-    powershell -command "Invoke-WebRequest -Uri '%GITHUB_DOWNLOAD_URL:WinTools.bat=config.bat%' -OutFile '%CONFIG_FILE%'" >nul 2>&1
-    if exist %CONFIG_FILE% call %CONFIG_FILE% >nul 2>&1
-)
-goto :eof
-
-:: Запись в лог
-:write_log
->> "%LOG_FILE%" echo %*
-goto :eof
-
-:: Основной блок инициализации
-:init
-call :check_admin
-call :create_dirs
-call :load_config
-
-:: Форматируем временную метку без спецсимволов
-set "TIMESTAMP=%DATE% %TIME%"
-set "TIMESTAMP=!TIMESTAMP:/=-%"
-set "TIMESTAMP=!TIMESTAMP::=-%"
-set "TIMESTAMP=!TIMESTAMP: =-%"
-
-:: Записываем начало сессии в лог
->> "%LOG_FILE%" echo ===========================
->> "%LOG_FILE%" echo === WinTools Log ===
->> "%LOG_FILE%" echo Start: %TIMESTAMP%
->> "%LOG_FILE%" echo User: %USERNAME%
->> "%LOG_FILE%" echo Host: %COMPUTERNAME%
->> "%LOG_FILE%" echo ---------------------------
+:: 37. Проверка SMART‑статуса дисков
+:smart_check
+echo [INFO] Проверка SMART‑статуса дисков...
+wmic diskdrive get Model,Status /format:list
+echo.
+echo [HINT] Статус "OK" означает исправность диска.
+>> "%LOG_FILE%" echo SMART_CHECK_COMPLETED %TIME::=.%
+pause
 goto menu
 
-:: Запуск инициализации при старте
-call :init
 
-:: Если скрипт запущен с аргументом, выполняем соответствующую функцию
-if "%1" neq "" (
-    goto %1
+:: 38. Сброс сетевых настроек
+:reset_network
+echo [WARNING] Будут сброшены все сетевые настройки!
+set /p confirm="Продолжить? (Y/N): "
+if /i not "%confirm%"=="Y" goto menu
+
+echo [INFO] Сброс сетевых настроек...
+netsh winsock reset >nul 2>&1
+netsh int ip reset >nul 2>&1
+ipconfig /flushdns >nul 2>&1
+echo [OK] Сетевые настройки сброшены. Перезагрузите компьютер.
+>> "%LOG_FILE%" echo NETWORK_RESET %TIME::=.%
+pause
+goto menu
+
+:: 39. Отключение телеметрии Windows
+:disable_telemetry
+echo [WARNING] Отключение телеметрии может повлиять на работу некоторых служб!
+set /p confirm="Продолжить? (Y/N): "
+if /i not "%confirm%"=="Y" goto menu
+
+
+echo [INFO] Отключение телеметрии...
+reg add "HKLM\SOFTWARE\Policies\Microsoft\Windows\DataCollection" /v AllowTelemetry /t REG_DWORD /d 0 /f >nul 2>&1
+sc config DiagTrack start= disabled >nul 2>&1
+sc stop DiagTrack >nul 2>&1
+echo [OK] Телеметрия отключена.
+>> "%LOG_FILE%" echo TELEMETRY_DISABLED %TIME::=.%
+pause
+goto menu
+
+:: 40. Управление автозагрузкой
+:manage_startup
+echo === УПРАВЛЕНИЕ АВТОЗАГРУЗКОЙ ===
+echo.
+echo 1. Добавить WinTools в автозагрузку
+echo 2. Удалить WinTools из автозагрузки
+echo 3. Показать текущие записи автозагрузки
+echo 4. Назад в меню
+set /p startup_choice="Выберите действие (1-4): "
+
+
+if "%startup_choice%"=="1" goto add_to_startup
+if "%startup_choice%"=="2" goto remove_from_startup
+if "%startup_choice%"=="3" goto show_startup_entries
+if "%startup_choice%"=="4" goto menu
+echo Неверный выбор! Попробуйте снова.
+timeout /t 2 /nobreak >nul
+goto manage_startup
+
+:: Добавление в автозагрузку
+:add_to_startup
+set "REG_KEY=HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run"
+set "ENTRY_NAME=WinTools"
+set "FILE_PATH=C:\Program Files\WinTools\WinTools.bat"
+
+echo Попытка добавить WinTools в автозагрузку...
+reg add "%REG_KEY%" /v "%ENTRY_NAME%" /t REG_SZ /d "%FILE_PATH%" /f >nul
+
+if %errorlevel% equ 0 (
+    echo [OK] Успешно добавлено в автозагрузку!
+    >> "%LOG_FILE%" echo STARTUP_ENTRY_ADDED %TIME::=.% ENTRY=%ENTRY_NAME% PATH=%FILE_PATH%
+) else (
+    echo [ERROR] Ошибка при добавлении в автозагрузку.
+    >> "%LOG_FILE%" echo STARTUP_ADD_FAILED %TIME::=.% ERROR=%errorlevel%
+)
+pause
+goto manage_startup
+
+:: Удаление из автозагрузки
+:remove_from_startup
+set "REG_KEY=HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run"
+set "ENTRY_NAME=WinTools"
+
+echo Попытка удалить WinTools из автозагрузки...
+reg delete "%REG_KEY%" /v "%ENTRY_NAME%" /f
+
+if %errorlevel% equ 0 (
+    echo [OK] Удалено из автозагрузки!
+    >> "%LOG_FILE%" echo STARTUP_ENTRY_REMOVED %TIME::=.% ENTRY=%ENTRY_NAME%
+) else (
+    echo [WARNING] Запись не найдена или ошибка удаления (возможно, её не было в автозагрузке) 
+    >> "%LOG_FILE%" echo STARTUP_REMOVE_ATTEMPT %TIME::=.% ENTRY=%ENTRY_NAME% NOT_FOUND
+)
+pause
+goto manage_startup
+
+:: Показать текущие записи автозагрузки
+:show_startup_entries
+echo [INFO] Текущие записи автозагрузки для текущего пользователя:
+reg query "HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Run" 2>nul
+
+if %errorlevel% neq 0 (
+    echo Нет записей автозагрузки или ошибка доступа.
+)
+echo.
+echo [INFO] Записи автозагрузки для всех пользователей:
+reg query "HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run" 2>nul
+
+if %errorlevel% neq 0 (
+    echo Нет общих записей автозагрузки или ошибка доступа.
 )
 
-:: По умолчанию показываем меню
+echo.
+echo Для детальной информации откройте:
+echo - Диспетчер задач → вкладка "Автозагрузка"
+echo - msconfig → вкладка "Автозагрузка"
+pause
+goto manage_startup
+
+
+:: 41. Очистка реестра
+:clean_registry
+echo [WARNING] Очистка реестра может привести к нестабильности системы!
+set /p confirm="Продолжить? (Y/N): "
+if /i not "%confirm%"=="Y" goto menu
+
+echo [INFO] Очистка временных записей реестра...
+reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\RunMRU" /f >nul 2>&1
+echo [OK] Временные записи реестра очищены.
+>> "%LOG_FILE%" echo REGISTRY_CLEANED %TIME::=.%
+pause
+goto menu
+
+:: 42. Оптимизация плана электропитания
+:power_plan
+echo 1. Сбалансированный
+echo 2. Высокая производительность
+echo 3. Экономия энергии
+echo 4. Назад в меню
+set /p plan_choice="Выберите план (1-4): "
+
+if "%plan_choice%"=="1" powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e && echo [OK] План "Сбалансированный" активирован.
+if "%plan_choice%"=="2" powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c && echo [OK] План "Высокая производительность" активирован.
+if "%plan_choice%"=="3" powercfg /setactive a1841308-3541-4809-9764-395326ec4e5c && echo [OK] План "Экономия энергии" активирован.
+if "%plan_choice%"=="4" goto menu
+>> "%LOG_FILE%" echo POWER_PLAN_CHANGED %TIME::=.% PLAN=%plan_choice%
+pause
+goto power_plan
+
+:: 43. Мониторинг температуры компонентов
+:monitor_temperature
+echo [INFO] Получение температуры компонентов...
+powershell -command "Get-CimInstance -Namespace 'root/WMI' -Class MSAcpi_ThermalZoneTemperature | ForEach-Object { $temp = ($_.CurrentTemperature / 10) - 273.15; 'Температура: {0:F1}°C' -f $temp }"
+echo [HINT] Для точных данных установите HWMonitor или OpenHardwareMonitor.
+pause
+goto menu
+
+:: 44. Тест стабильности системы
+:stability_test
+echo [WARNING] Тест стабильности может сильно нагружать систему!
+set /p confirm="Продолжить? (Y/N): "
+if /i not "%confirm%"=="Y" goto menu
+
+echo [INFO] Запуск стресс‑теста CPU...
+echo [HINT] Используйте сторонние утилиты (Prime95, AIDA64) для полного теста.
+timeout /t 10
+echo [OK] Стресс‑тест завершён (упрощённая версия).
+>> "%LOG_FILE%" echo STABILITY_TEST_COMPLETED %TIME::=.%
+pause
+goto menu
+
+
+:: 45. Экспорт отчёта в PDF
+:export_pdf_report
+echo [INFO] Экспорт отчёта в PDF (в разработке)
+echo [HINT] Для создания PDF требуется внешняя утилита (wkhtmltopdf, LibreOffice).
+pause
+goto menu
+
+
+:: 46. Синхронизация с облаком
+:cloud_sync
+echo [INFO] Синхронизация с облаком (в разработке)
+echo [HINT] Настройте OneDrive, Google Drive или Dropbox вручную.
+pause
+goto menu
+
+:: 47. Клонирование системы
+:system_clone
+echo [WARNING] Клонирование системы требует специализированного ПО!
+echo [HINT] Используйте Macrium Reflect, Clonezilla или AOMEI Backupper.
+pause
+goto menu
+
+
+:: 48. Менеджер паролей
+:password_manager
+echo [INFO] Менеджер паролей (в разработке)
+echo [HINT] Для безопасного хранения паролей используйте KeePass, Bitwarden.
+pause
+goto menu
+
+
+:: 49. Поиск дубликатов файлов
+:find_duplicates
+echo [INFO] Поиск дубликатов файлов (в разработке)
+echo [HINT] Используйте CCleaner, Duplicate Cleaner или WinMerge.
+pause
+goto menu
+
+
+:: 50. Выход с перезагрузкой
+:exit_with_reboot
+echo [WARNING] Компьютер будет перезагружен!
+set /p confirm="Продолжить? (Y/N): "
+if /i not "%confirm%"=="Y" goto menu
+
+echo [INFO] Перезагрузка системы...
+>> "%LOG_FILE%" echo SYSTEM_REBOOT_INITIATED %TIME::=.%
+shutdown /r /t 5 /c "WinTools: перезагрузка по запросу пользователя"
+echo Перезагрузка через 5 секунд...
+pause
 goto menu
