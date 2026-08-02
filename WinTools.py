@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
-"""
-WinTools 5.0.2 - Python Version
-Многофункциональный инструмент для обслуживания Windows
-Только рабочие функции
-"""
-
 import os
 import sys
 import subprocess
@@ -27,7 +18,7 @@ import urllib.error
 
 # --- Конфигурация ---
 APP_NAME = "WinTools"
-VERSION = "5.0.2"
+VERSION = "1.0.0"
 BASE_DIR = Path("C:/Program Files/WinTools")
 LOG_DIR = BASE_DIR / "Log"
 CONFIG_DIR = BASE_DIR / "config"
